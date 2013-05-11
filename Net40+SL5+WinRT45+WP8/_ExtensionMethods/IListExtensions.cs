@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 
@@ -9,8 +10,8 @@ namespace Kirinji.LightWands
     {
         public static bool RemoveFirst<T>(this IList<T> source, Func<T, bool> predicate)
         {
-            if (source == null) throw new ArgumentNullException("source");
-            if (predicate == null) throw new ArgumentNullException("predicate");
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(predicate != null);
 
             int? firstIndex = source.FirstIndex(predicate);
             if (firstIndex.HasValue)
@@ -24,7 +25,7 @@ namespace Kirinji.LightWands
 
         public static bool RemoveFirst<T>(this IList<T> source)
         {
-            if (source == null) throw new ArgumentNullException("source");
+            Contract.Requires<ArgumentNullException>(source != null);
 
             if (source.Count == 0)
                 return false;
@@ -37,7 +38,7 @@ namespace Kirinji.LightWands
 
         public static bool RemoveLast<T>(this IList<T> source)
         {
-            if (source == null) throw new ArgumentNullException("source");
+            Contract.Requires<ArgumentNullException>(source != null);
 
             if (source.Count == 0)
                 return false;
@@ -50,8 +51,8 @@ namespace Kirinji.LightWands
 
         public static bool RemoveLast<T>(this IList<T> source, Func<T, bool> predicate)
         {
-            if (source == null) throw new ArgumentNullException("source");
-            if (predicate == null) throw new ArgumentNullException("predicate");
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(predicate != null);
 
             int? lastIndex = source.LastIndex(predicate);
             if (lastIndex.HasValue)
@@ -65,7 +66,7 @@ namespace Kirinji.LightWands
 
         public static IEnumerable<T> RemoveAll<T>(this IList<T> source)
         {
-            if (source == null) throw new ArgumentNullException("source");
+            Contract.Requires<ArgumentNullException>(source != null);
 
             var removedItems = new List<T>(source);
             source.Clear();
@@ -74,15 +75,15 @@ namespace Kirinji.LightWands
 
         public static IEnumerable<T> RemoveAll<T>(this IList<T> source, T item)
         {
-            if (source == null) throw new ArgumentNullException("source");
+            Contract.Requires<ArgumentNullException>(source != null);
 
             return source.RemoveAll(t => Object.Equals(t, item));
         }
 
         public static IEnumerable<T> RemoveAll<T>(this IList<T> source, Func<T, bool> predicate)
         {
-            if (source == null) throw new ArgumentNullException("source");
-            if (predicate == null) throw new ArgumentNullException("predicate");
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(predicate != null);
 
             var removedItems = new List<T>();
 
@@ -102,7 +103,7 @@ namespace Kirinji.LightWands
 
         public static T PopFirst<T>(this IList<T> source)
         {
-            if (source == null) throw new ArgumentNullException("source");
+            Contract.Requires<ArgumentNullException>(source != null);
 
             var firstItem = source.First();
             source.RemoveFirst();
@@ -111,7 +112,7 @@ namespace Kirinji.LightWands
 
         public static IList<T> PopFirst<T>(this IList<T> source, int count)
         {
-            if (source == null) throw new ArgumentNullException("source");
+            Contract.Requires<ArgumentNullException>(source != null);
 
             if (count <= -1) throw new ArgumentOutOfRangeException();
 
@@ -127,7 +128,7 @@ namespace Kirinji.LightWands
 
         public static T PopLast<T>(this IList<T> source)
         {
-            if (source == null) throw new ArgumentNullException("source");
+            Contract.Requires<ArgumentNullException>(source != null);
 
             var lastItem = source.Last();
             source.RemoveLast();
@@ -136,9 +137,8 @@ namespace Kirinji.LightWands
 
         public static IList<T> PopLast<T>(this IList<T> source, int count)
         {
-            if (source == null) throw new ArgumentNullException("source");
-
-            if (count <= -1) throw new ArgumentOutOfRangeException();
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentOutOfRangeException>(count >= 0);
 
             var returnList = new List<T>();
 

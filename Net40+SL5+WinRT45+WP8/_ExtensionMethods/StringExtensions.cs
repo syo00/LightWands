@@ -179,7 +179,7 @@ namespace Kirinji.LightWands
                 {"ｰ", "ー"}
             };
 
-        // [ToDo!] 不完全
+        // ToDo: 不完全
         static IDictionary<string, string> WidthDicRegexSymbolsToRegexSymbols = new Dictionary<string, string>
         {
             {"￥",@"\\"},
@@ -187,7 +187,7 @@ namespace Kirinji.LightWands
             {"）",@"\)"}
         };
 
-        // [ToDo!] 不完全
+        // ToDo: 不完全
         static IDictionary<string, string> WidthDicRegexSymbolsToString = new Dictionary<string, string>
         {
             {"￥",@"\"},

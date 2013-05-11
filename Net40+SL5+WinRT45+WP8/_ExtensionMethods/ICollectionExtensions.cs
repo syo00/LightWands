@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 
@@ -9,8 +10,9 @@ namespace Kirinji.LightWands
     {
         public static void AddRange<T>(this ICollection<T> source, IEnumerable<T> collection)
         {
-            if (source == null) throw new ArgumentNullException("source");
-            if (collection == null) throw new ArgumentNullException("collection");
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(collection != null);
+
             foreach (var r in collection) source.Add(r);
         }
     }

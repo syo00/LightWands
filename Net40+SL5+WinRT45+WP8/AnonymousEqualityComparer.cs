@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 
@@ -14,13 +15,13 @@ namespace Kirinji.LightWands
         /// <remarks>Not recommended to use this constructor because GetHashCode always returns same value and it makes programs slow.</remarks>
         public AnonymousEqualityComparer(Func<T, T, bool> comparerDelegate) : this(comparerDelegate, _ => 1)
         {
-            
+            Contract.Requires<ArgumentNullException>(comparerDelegate != null);
         }
 
         public AnonymousEqualityComparer(Func<T, T, bool> comparerDelegate, Func<T, int> getHashCodeDelegate)
         {
-            if (comparerDelegate == null) throw new ArgumentNullException("comparerDelegate");
-            if (getHashCodeDelegate == null) throw new ArgumentNullException("getHashCodeDelegate");
+            Contract.Requires<ArgumentNullException>(comparerDelegate != null);
+            Contract.Requires<ArgumentNullException>(getHashCodeDelegate != null);
 
             this.comparerDelegate = comparerDelegate;
             this.getHashCodeDelegate = getHashCodeDelegate;
@@ -43,15 +44,15 @@ namespace Kirinji.LightWands
         /// <remarks>Not recommended to use this method because GetHashCode always returns same value and it makes programs slow.</remarks>
         public static EqualityComparer<T> Create<T>(Func<T, T, bool> comparer)
         {
-            if (comparer == null) throw new ArgumentNullException("comparer");
+            Contract.Requires<ArgumentNullException>(comparer != null);
 
             return new AnonymousEqualityComparer<T>(comparer);
         }
 
         public static EqualityComparer<T> Create<T>(Func<T, T, bool> comparer, Func<T, int> hashCodeCreator)
         {
-            if (comparer == null) throw new ArgumentNullException("comparer");
-            if (hashCodeCreator == null) throw new ArgumentNullException("hashCodeCreator");
+            Contract.Requires<ArgumentNullException>(comparer != null);
+            Contract.Requires<ArgumentNullException>(hashCodeCreator != null);
 
             return new AnonymousEqualityComparer<T>(comparer, hashCodeCreator);
         }
@@ -59,7 +60,7 @@ namespace Kirinji.LightWands
         /// <summary>Creates <c>EqualityComparer&lt;T&gt;</c> by specifying parameters or methods.</summary>
         public static EqualityComparer<T> Create<T>(IEnumerable<Func<T, object>> comparingParameters)
         {
-            if (comparingParameters == null) throw new ArgumentNullException("comparingParameters");
+            Contract.Requires<ArgumentNullException>(comparingParameters != null);
 
             Func<T, T, bool> comparer = (x, y) => comparingParameters.All(f => Object.Equals(f(x), f(y)));
             Func<T, int> hashCodeCreator = t => comparingParameters
@@ -72,7 +73,7 @@ namespace Kirinji.LightWands
         /// <summary>Creates <c>EqualityComparer&lt;T&gt;</c> by specifying parameters or methods.</summary>
         public static EqualityComparer<T> Create<T>(params Func<T, object>[] comparingParameters)
         {
-            if (comparingParameters == null) throw new ArgumentNullException("comparingParameters");
+            Contract.Requires<ArgumentNullException>(comparingParameters != null);
 
             return Create(comparingParameters.AsEnumerable());
         }
@@ -102,7 +103,7 @@ namespace Kirinji.LightWands
         /// <summary>Creates <c>EqualityComparer&lt;IEnumerable&lt;T&gt;&gt;</c> to compare the number of each values.</summary>
         public static EqualityComparer<IEnumerable<T>> EnumerableOfUnordered<T>(IComparer<T> comparer)
         {
-            if (comparer == null) throw new ArgumentNullException("comparer");
+            Contract.Requires<ArgumentNullException>(comparer != null);
 
             return EnumerableOfInner<T>(true, comparer);
         }
@@ -110,7 +111,7 @@ namespace Kirinji.LightWands
         // ignoreOrder = true のとき、順序がバラバラでも要素の個数が合っていれば Equal となる
         private static EqualityComparer<IEnumerable<T>> EnumerableOfInner<T>(bool ignoreOrder, IComparer<T> orderingComparer)
         {
-            if (orderingComparer == null) throw new ArgumentNullException("orderingComparer");
+            Contract.Requires<ArgumentNullException>(orderingComparer != null);
 
             Func<IEnumerable<T>, int> hashCodeCreator = e => 
                 e.Count() == 0
