@@ -5,6 +5,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightWands.Portable-Net45+W
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightWands.Portable-Net40+SL5+WinRT45+WP8", "LightWands.Portable-Net40+SL5+WinRT45+WP8.csproj", "{B8A888CA-5A91-43FE-A51A-8B33CDC17096}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightWandsTest", "Tests\LightWandsTest\LightWandsTest.csproj", "{88A7EB46-42A7-40FF-820B-0DEB51026812}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sources", "Sources", "{1E69CC1C-5A46-4A58-838E-C20BA3C3A105}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{4D1D3960-F387-4AD3-B101-7E828776C220}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,8 +25,17 @@ Global
 		{B8A888CA-5A91-43FE-A51A-8B33CDC17096}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B8A888CA-5A91-43FE-A51A-8B33CDC17096}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B8A888CA-5A91-43FE-A51A-8B33CDC17096}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88A7EB46-42A7-40FF-820B-0DEB51026812}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88A7EB46-42A7-40FF-820B-0DEB51026812}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88A7EB46-42A7-40FF-820B-0DEB51026812}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88A7EB46-42A7-40FF-820B-0DEB51026812}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B8A888CA-5A91-43FE-A51A-8B33CDC17096} = {1E69CC1C-5A46-4A58-838E-C20BA3C3A105}
+		{B5B2F3C7-62C8-47DF-BCEC-FE93936EF31B} = {1E69CC1C-5A46-4A58-838E-C20BA3C3A105}
+		{88A7EB46-42A7-40FF-820B-0DEB51026812} = {4D1D3960-F387-4AD3-B101-7E828776C220}
 	EndGlobalSection
 EndGlobal
