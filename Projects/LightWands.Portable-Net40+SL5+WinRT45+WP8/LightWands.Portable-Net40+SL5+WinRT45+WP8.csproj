@@ -21,7 +21,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NET40_SL5_WINRT45_WP8</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeContractsEnableRuntimeChecking>True</CodeContractsEnableRuntimeChecking>
@@ -63,7 +63,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;NET40_SL5_WINRT45_WP8</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeContractsEnableRuntimeChecking>True</CodeContractsEnableRuntimeChecking>
@@ -105,29 +105,8 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\sources\net40+sl5+winrt45+wp8\AnonymousEqualityComparer.cs">
-      <Link>Net40+SL5+WinRT45+WP8\AnonymousEqualityComparer.cs</Link>
-    </Compile>
-    <Compile Include="..\..\sources\net40+sl5+winrt45+wp8\_base\Disposable.cs">
-      <Link>Net40+SL5+WinRT45+WP8\_Base\Disposable.cs</Link>
-    </Compile>
-    <Compile Include="..\..\sources\net40+sl5+winrt45+wp8\_extensionmethods\EnumerableEx.cs">
-      <Link>Net40+SL5+WinRT45+WP8\_ExtensionMethods\EnumerableEx.cs</Link>
-    </Compile>
-    <Compile Include="..\..\sources\net40+sl5+winrt45+wp8\_extensionmethods\ICollectionExtensions.cs">
-      <Link>Net40+SL5+WinRT45+WP8\_ExtensionMethods\ICollectionExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\sources\net40+sl5+winrt45+wp8\_extensionmethods\IDictionaryExtensions.cs">
-      <Link>Net40+SL5+WinRT45+WP8\_ExtensionMethods\IDictionaryExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\sources\net40+sl5+winrt45+wp8\_extensionmethods\IEnumerableExtensions.cs">
-      <Link>Net40+SL5+WinRT45+WP8\_ExtensionMethods\IEnumerableExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\sources\net40+sl5+winrt45+wp8\_extensionmethods\IListExtensions.cs">
-      <Link>Net40+SL5+WinRT45+WP8\_ExtensionMethods\IListExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\sources\net40+sl5+winrt45+wp8\_extensionmethods\StringExtensions.cs">
-      <Link>Net40+SL5+WinRT45+WP8\_ExtensionMethods\StringExtensions.cs</Link>
+    <Compile Include="..\..\Sources\LightWands.cs">
+      <Link>LightWands.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

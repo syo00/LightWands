@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;TESTS;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeContractsEnableRuntimeChecking>True</CodeContractsEnableRuntimeChecking>
@@ -60,7 +60,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;TESTS;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeContractsEnableRuntimeChecking>True</CodeContractsEnableRuntimeChecking>
@@ -129,63 +129,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\Sources\Net40+SL5+WinRT45+WP8\AnonymousEqualityComparer.cs">
-      <Link>Net40+SL5+WinRT45+WP8\AnonymousEqualityComparer.cs</Link>
+    <Compile Include="..\..\Sources\LightWands.cs">
+      <Link>LightWands.cs</Link>
     </Compile>
-    <Compile Include="..\..\Sources\Net40+SL5+WinRT45+WP8\_Base\Disposable.cs">
-      <Link>Net40+SL5+WinRT45+WP8\Bse\Disposable.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Net40+SL5+WinRT45+WP8\_ExtensionMethods\EnumerableEx.cs">
-      <Link>Net40+SL5+WinRT45+WP8\NewFolder1\EnumerableEx.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Net40+SL5+WinRT45+WP8\_ExtensionMethods\ICollectionExtensions.cs">
-      <Link>Net40+SL5+WinRT45+WP8\NewFolder1\ICollectionExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Net40+SL5+WinRT45+WP8\_ExtensionMethods\IDictionaryExtensions.cs">
-      <Link>Net40+SL5+WinRT45+WP8\NewFolder1\IDictionaryExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Net40+SL5+WinRT45+WP8\_ExtensionMethods\IEnumerableExtensions.cs">
-      <Link>Net40+SL5+WinRT45+WP8\NewFolder1\IEnumerableExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Net40+SL5+WinRT45+WP8\_ExtensionMethods\IListExtensions.cs">
-      <Link>Net40+SL5+WinRT45+WP8\NewFolder1\IListExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Net40+SL5+WinRT45+WP8\_ExtensionMethods\StringExtensions.cs">
-      <Link>Net40+SL5+WinRT45+WP8\NewFolder1\StringExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Net45+WinRT45+WP8\CashedReplaySubject.cs">
-      <Link>Net45+WinRT45+WP8\CashedReplaySubject.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Net45+WinRT45+WP8\ObservableDictionary.cs">
-      <Link>Net45+WinRT45+WP8\ObservableDictionary.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Net45+WinRT45+WP8\_ExtensionMethods\INotifyCollectionChangedExtensions.cs">
-      <Link>Net45+WinRT45+WP8\NewFolder1\INotifyCollectionChangedExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Net45+WinRT45+WP8\_ExtensionMethods\IObservableExtensions.cs">
-      <Link>Net45+WinRT45+WP8\NewFolder1\IObservableExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Net45+WinRT45+WP8\_ExtensionMethods\ObservableCollectionExtensions.cs">
-      <Link>Net45+WinRT45+WP8\NewFolder1\ObservableCollectionExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Net45+WinRT45+WP8\_ExtensionMethods\ReadOnlyObservableCollectionExtensions.cs">
-      <Link>Net45+WinRT45+WP8\NewFolder1\ReadOnlyObservableCollectionExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Tests\IEnumerableExtensions.cs">
-      <Link>Tests\IEnumerableExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Tests\IObservableExtensions.cs">
-      <Link>Tests\IObservableExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Sources\Tests\PrivateObjectExtensions.cs">
-      <Link>Tests\PrivateObjectExtensions.cs</Link>
-    </Compile>
-    <Compile Include="ChainingAssertion.MSTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
