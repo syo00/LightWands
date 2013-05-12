@@ -11,6 +11,7 @@
     <iconUrl>http://go.microsoft.com/fwlink/?LinkId=261274</iconUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>Reactive Extensions Query Library used to express complex event processing queries over observable sequences.</description>
+    <releaseNotes />
     <copyright>Microsoft Corporation © 2012</copyright>
     <language>en-us</language>
     <tags>Rx Reactive Extensions Observable LINQ Events</tags>

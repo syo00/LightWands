@@ -20,10 +20,14 @@
 // VERSION: 0.1.1
 
 
+/***** public or internal ******/
 // NOTE: uncomment the following line to make LightWands class internal.
 //#define USE_INTERNAL
 
+
+/***** targeting projects ******/
 // NOTE: select one number from (1), (2), or (3) by your project and uncomment its corresponding #define. You do not have to uncomment more than two #define lines in (1) to (3).
+
 // (1) If you want to apply for below projects, uncomment below #define TESTS
 //     * tests for .NET Framework 4.5
 //#define TESTS
@@ -40,6 +44,7 @@
 //     * Windows store application
 //     * Windows Phone 8
 //#define NET40_SL5_WINRT45_WP8
+
 
 
 #if TESTS

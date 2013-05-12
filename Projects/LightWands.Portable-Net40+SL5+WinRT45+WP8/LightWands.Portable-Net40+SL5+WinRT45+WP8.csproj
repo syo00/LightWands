@@ -105,7 +105,7 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\Sources\LightWands.cs">
+    <Compile Include="..\..\LightWands.cs">
       <Link>LightWands.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />

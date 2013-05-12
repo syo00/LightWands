@@ -102,7 +102,7 @@
     <CodeContractsAnalysisWarningLevel>0</CodeContractsAnalysisWarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\Sources\LightWands.cs">
+    <Compile Include="..\..\LightWands.cs">
       <Link>LightWands.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
