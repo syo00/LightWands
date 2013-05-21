@@ -693,6 +693,8 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static string DeleteSpaces(this string s)
         {
+            Contract.Requires<ArgumentNullException>(s != null);
+
             return s.Replace(" ", "").Replace("\r", "").Replace("\n", "");
         }
 
@@ -864,6 +866,8 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static string RegexIgnoreWidth(this string s)
         {
+            Contract.Requires<ArgumentNullException>(s != null);
+
             var str = s;
 
             foreach (var set in WidthDicExcludingRegexSymbols)
@@ -886,6 +890,8 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static string StringIgnoreWidth(this string s)
         {
+            Contract.Requires<ArgumentNullException>(s != null);
+
             var str = s;
 
             foreach (var set in WidthDicExcludingRegexSymbols)
@@ -996,8 +1002,9 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static string IgnoreKana(this string s)
         {
-            var str = s;
+            Contract.Requires<ArgumentNullException>(s != null);
 
+            string str = s;
             foreach (var set in KanaDic)
             {
                 str = str.Replace(set.Key, set.Value);
@@ -2198,31 +2205,49 @@ namespace Kirinji.LightWands.Tests
     {
         public static object Invoke<T>(this PrivateObject source, string name, T param)
         {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(name != null);
+
             return source.Invoke(name, new Type[] { typeof(T) }, new object[] { param });
         }
 
         public static object Invoke<T1, T2>(this PrivateObject source, string name, T1 param1, T2 param2)
         {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(name != null);
+
             return source.Invoke(name, new Type[] { typeof(T1), typeof(T2) }, new object[] { param1, param2 });
         }
 
         public static object Invoke<T1, T2, T3>(this PrivateObject source, string name, T1 param1, T2 param2, T3 param3)
         {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(name != null);
+
             return source.Invoke(name, new Type[] { typeof(T1), typeof(T2), typeof(T3) }, new object[] { param1, param2, param3 });
         }
 
         public static object Invoke<T1, T2, T3, T4>(this PrivateObject source, string name, T1 param1, T2 param2, T3 param3, T4 param4)
         {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(name != null);
+
             return source.Invoke(name, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4) }, new object[] { param1, param2, param3, param4 });
         }
 
         public static object Invoke<T1, T2, T3, T4, T5>(this PrivateObject source, string name, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(name != null);
+
             return source.Invoke(name, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5) }, new object[] { param1, param2, param3, param4, param5 });
         }
 
         public static object Invoke<T1, T2, T3, T4, T5, T6>(this PrivateObject source, string name, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(name != null);
+
             return source.Invoke(name, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6) }, new object[] { param1, param2, param3, param4, param5, param6 });
         }
     }
