@@ -472,6 +472,26 @@ namespace Kirinji.LightWands
             }
         }
 
+        public static IEnumerable<KeyValuePair<int, T>> Indexes<T>(this IEnumerable<T> source)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Ensures(Contract.Result<IEnumerable<KeyValuePair<int, T>>>() != null);
+
+            int count = 0;
+            foreach (var e in source)
+            {
+                yield return new KeyValuePair<int, T>(count, e);
+            }
+        }
+
+        public static IEnumerable<T> Concat<T>(this IEnumerable<T> source, params T[] second)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(second != null);
+
+            return source.Concat(second.AsEnumerable());
+        }
+
         public static bool NonSequenceEqual<T>(this IEnumerable<T> source, IEnumerable<T> second)
         {
             Contract.Requires<ArgumentNullException>(source != null);
@@ -2144,24 +2164,35 @@ namespace Kirinji.LightWands.Tests
         }
 
         /// <summary>Gets values history.</summary>
-        public IEnumerable<T> Values
+        public IReadOnlyList<T> Values
         {
             get
             {
                 return this.notifications
                     .Where(n => n.Kind == NotificationKind.OnNext)
-                    .Select(n => n.Value);
+                    .Select(n => n.Value)
+                    .ToList();
             }
         }
 
         /// <summary>Gets exceptions history.</summary>
-        public IEnumerable<Exception> Exceptions
+        public IReadOnlyList<Exception> Exceptions
         {
             get
             {
                 return this.notifications
                     .Where(n => n.Kind == NotificationKind.OnError)
-                    .Select(n => n.Exception);
+                    .Select(n => n.Exception)
+                    .ToList();
+            }
+        }
+
+        /// <summary>Gets all notifications.</summary>
+        public IReadOnlyList<Notification<T>> Notifications
+        {
+            get
+            {
+                return notifications.ToList();
             }
         }
 
@@ -2180,11 +2211,13 @@ namespace Kirinji.LightWands.Tests
             this.notifications.Clear();
         }
 
+        [Obsolete]
         public IEnumerator<Notification<T>> GetEnumerator()
         {
             return this.notifications.GetEnumerator();
         }
 
+        [Obsolete]
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
