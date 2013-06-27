@@ -67,6 +67,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 
 
 namespace Kirinji.LightWands
@@ -80,31 +81,8 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-        abstract class Disposable : IDisposable
+        static class Disposable
     {
-        protected bool IsDisposed
-        {
-            get;
-            private set;
-        }
-
-        protected void ThrowExceptionIfDisposed()
-        {
-            lock (this)
-            {
-                if (IsDisposed)
-                {
-                    throw new ObjectDisposedException(GetType().FullName + " has been already disposed.");
-                }
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         public static bool TryDisposeAndRelease<T>(ref T disposingValue) where T : class
         {
             if (disposingValue == null) return false;
@@ -122,28 +100,6 @@ namespace Kirinji.LightWands
             d.Dispose();
             return true;
         }
-
-        private void Dispose(bool isDisposing)
-        {
-            lock (this)
-            {
-                if (IsDisposed) return;               
-                if (isDisposing) OnDisposingUnManagedResources();
-                OnDisposingManagedResources();
-                IsDisposed = true;
-            }
-        }
-
-        protected virtual void OnDisposingManagedResources()
-        { }
-
-        protected virtual void OnDisposingUnManagedResources()
-        { }
-
-        ~Disposable()
-        {
-            Dispose(false);
-        }
     }
 
     #endregion
@@ -156,7 +112,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-        static class EnumerableEx
+        static partial class EnumerableEx
     {
         public static IEnumerable<T> Empty<T>()
         {
@@ -172,14 +128,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region ICollectionExtensions
+    #region CollectionEx
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static class ICollectionExtensions
+        static class CollectionEx
     {
         public static void AddRange<T>(this ICollection<T> source, IEnumerable<T> collection)
         {
@@ -193,14 +149,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region IDictionaryExtensions
+    #region DictionaryEx
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static class IDictionaryExtensions
+        static class DictionaryEx
     {
         public static TValue ValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> source, TKey key)
         {
@@ -221,14 +177,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region IEnumerableExtensions
+    #region EnumerableEx
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static class IEnumerableExtensions
+        static partial class EnumerableEx
     {
         public static IEnumerable<T> Do<T>(this IEnumerable<T> source, Action<T> action)
         {
@@ -248,6 +204,17 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(action != null);
 
             foreach (var item in source) action(item);
+        }
+
+        public static async Task ForEachAsync<T>(this IEnumerable<T> source, Func<T, Task> actionAsync)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(actionAsync != null);
+
+            foreach (var item in source)
+            {
+                await actionAsync(item);
+            }
         }
 
         public static IEnumerable<T> Hide<T>(this IEnumerable<T> source)
@@ -524,14 +491,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region IListExtensions
+    #region ListEx
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static class IListExtensions
+        static class ListEx
     {
         public static bool RemoveFirst<T>(this IList<T> source, Func<T, bool> predicate)
         {
@@ -682,14 +649,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region StringExtensions
+    #region StringEx
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static class StringExtensions
+        static class StringEx
     {
         /// <summary>
         /// 改行も Trim する
@@ -1279,21 +1246,49 @@ namespace Kirinji.LightWands
 
 #if NET45_WINRT45_WP8 || TESTS
 
-    #region INotifyCollectionChangedExtensions
-    static class INotifyCollectionChangedExtensions
+    #region ReadOnlyDictionaryEx
+
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    static class ReadOnlyDictionaryEx
+    {
+        public static TValue ValueOrDefault<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> source, TKey key)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+
+            TValue value;
+            if (source.TryGetValue(key, out value))
+            {
+                return value;
+            }
+            else
+            {
+                return default(TValue);
+            }
+        }
+    }
+
+    #endregion
+
+
+    #region NotifyCollectionChangedEx
+    static class NotifyCollectionChangedEx
     {
         // SelectNew と SelectManyNew を public にしないのは、ReadOnlyObservableCollection も ObservableCollection にしてしまうから。そのため、ラッパークラスを別のクラスに作成している
 
         /// <summary>
         /// INotifyCollectionChanged から ObservableCollection を一対一の射影により作成します。IEnumerable もあわせて継承しているクラスの場合、ObservableCollection にもそれらの要素を追加します。
         /// </summary>
-        public static ObservableCollection<TResult> SelectNew<Tfrom, TResult>(this INotifyCollectionChanged source, Func<Tfrom, TResult> selector)
+        public static ObservableCollection<TResult> SelectNew<TFrom, TResult>(this INotifyCollectionChanged source, Func<TFrom, TResult> selector)
         {
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(selector != null);
 
             ObservableCollection<TResult> newOc;
-            var ieSource = source as IEnumerable<Tfrom>;
+            var ieSource = source as IEnumerable<TFrom>;
             if (ieSource != null)
             {
                 newOc = new ObservableCollection<TResult>(ieSource.Select(selector));
@@ -1303,14 +1298,14 @@ namespace Kirinji.LightWands
                 var notGenericIeSource = source as System.Collections.IEnumerable;
                 if (notGenericIeSource != null)
                 {
-                    newOc = new ObservableCollection<TResult>(notGenericIeSource.Cast<Tfrom>().Select(selector));
+                    newOc = new ObservableCollection<TResult>(notGenericIeSource.Cast<TFrom>().Select(selector));
                 }
                 else
                 {
                     newOc = new ObservableCollection<TResult>();
                 }
             }
-            source.CollectionChanged += (_, e) => ApplyNotifyCollectionChangedEventArgsToObservableCollection<TResult, Tfrom>(newOc, e, selector);
+            newOc.CollectionChanged += (_, e) => ApplyNotifyCollectionChangedEventArgsToObservableCollection(newOc, e, selector);
             return newOc;
         }
 
@@ -1318,14 +1313,14 @@ namespace Kirinji.LightWands
         /// NotifyCollectionChangedEventArgs の内容を ObservableCollection に反映します。
         /// </summary>
         /// <param name="changeCollection">このコレクションの要素が変更されます。</param>
-        private static void ApplyNotifyCollectionChangedEventArgsToObservableCollection<Tsource, TcollectionChanged>(ObservableCollection<Tsource> changeCollection, NotifyCollectionChangedEventArgs e, Func<TcollectionChanged, Tsource> converter)
+        public static void ApplyNotifyCollectionChangedEventArgsToObservableCollection<TSource, TCollectionChanged>(ObservableCollection<TSource> changeCollection, NotifyCollectionChangedEventArgs e, Func<TCollectionChanged, TSource> converter)
         {
             Contract.Requires<ArgumentNullException>(e != null);
 
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    e.NewItems.Cast<TcollectionChanged>().ForEach(i => changeCollection.Add(converter(i)));
+                    e.NewItems.Cast<TCollectionChanged>().ForEach(i => changeCollection.Add(converter(i)));
                     return;
                 case NotifyCollectionChangedAction.Move:
                     changeCollection.Move(e.OldStartingIndex, e.NewStartingIndex);
@@ -1334,7 +1329,7 @@ namespace Kirinji.LightWands
                     changeCollection.RemoveAt(e.OldStartingIndex);
                     return;
                 case NotifyCollectionChangedAction.Replace:
-                    changeCollection[e.NewStartingIndex] = converter((TcollectionChanged)e.NewItems[0]);
+                    changeCollection[e.NewStartingIndex] = converter((TCollectionChanged)e.NewItems[0]);
                     return;
                 case NotifyCollectionChangedAction.Reset:
                     changeCollection.Clear();
@@ -1345,14 +1340,148 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region IObservableExtensions
+    #region ObservableCollectionEx
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static class IObservableExtensions
+        static class ObservableCollectionEx
+    {
+        public static int ReplaceAll<T>(this ObservableCollection<T> source, T newItem, Func<T, bool> predicate)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(newItem != null);
+            Contract.Requires<ArgumentNullException>(predicate != null);
+
+            return source.ReplaceAll(t => newItem, predicate);
+        }
+
+        public static int ReplaceAll<T>(this ObservableCollection<T> source, Func<T, T> newItem, Func<T, bool> predicate)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(newItem != null);
+            Contract.Requires<ArgumentNullException>(predicate != null);
+
+            int matchedCount = 0;
+            for (int i = 0; i <= source.Count - 1; i++)
+            {
+                var item = source[i];
+                if (predicate(item))
+                {
+                    source[i] = newItem(item);
+                    matchedCount++;
+                }
+            }
+            return matchedCount;
+        }
+
+        public static ReadOnlyObservableCollection<T> ToReadOnly<T>(this ObservableCollection<T> source)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+
+            return new ReadOnlyObservableCollection<T>(source);
+        }
+
+        /// <summary>一対一の射影により新たな ObservableCollection を作成します。</summary>
+        public static ObservableCollection<TResult> SelectNew<TFrom, TResult>(this ObservableCollection<TFrom> source, Func<TFrom, TResult> selector)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(selector != null);
+
+            return NotifyCollectionChangedEx.SelectNew<TFrom, TResult>(source, selector);
+        }
+
+        
+
+        public static void Update<T>(this ObservableCollection<T> source, IEnumerable<T> updateCollection)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(updateCollection != null);
+
+            source.Update(updateCollection, EqualityComparer<T>.Default);
+        }
+
+        /// <summary>ObservableCollection の内容をコレクションと比較し、それぞれの要素数を合わせます。順序は保存されません。</summary>
+        public static void Update<T>(this ObservableCollection<T> source, IEnumerable<T> updateCollection, IEqualityComparer<T> comparer)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(updateCollection != null);
+            Contract.Requires<ArgumentNullException>(comparer != null);
+
+            // updateCollection の数 - source の数
+            IDictionary<T, int> 要素の増減量 = new Dictionary<T, int>();
+
+            foreach (var s in source)
+            {
+                if (要素の増減量.ContainsKey(s))
+                {
+                    要素の増減量[s]--;
+                }
+                else
+                {
+                    要素の増減量[s] = -1;
+                }
+            }
+
+            foreach (var u in updateCollection)
+            {
+                if (要素の増減量.ContainsKey(u))
+                {
+                    要素の増減量[u]++;
+                }
+                else
+                {
+                    要素の増減量[u] = 1;
+                }
+            }
+
+            foreach (var i in 要素の増減量.Where(p => p.Value < 0))
+            {
+                source.Remove(i.Key);
+            }
+
+            foreach (var i in 要素の増減量.Where(p => p.Value > 0))
+            {
+                source.Add(i.Key);
+            }
+        }
+    }
+
+    #endregion
+
+
+    #region ReadOnlyObservableCollectionEx
+
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+        static class ReadOnlyObservableCollectionEx
+    {
+        /// <summary>一対多の射影により新たな ReadOnlyObservableCollection を作成します。</summary>
+        public static ReadOnlyObservableCollection<TResult> SelectNew<Tfrom, TResult>(this ReadOnlyObservableCollection<Tfrom> source, Func<Tfrom, TResult> selector)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(selector != null);
+
+            return NotifyCollectionChangedEx.SelectNew<Tfrom, TResult>(source, selector).ToReadOnly();
+        }
+    }
+
+    #endregion
+
+
+    #region ObservableEx
+
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+ static partial class ObservableEx
     {
         public static T MostRecentValue<T>(this IObservable<T> source)
         {
@@ -1616,138 +1745,6 @@ namespace Kirinji.LightWands
                         observer.OnCompleted);
                 return s;
             });
-        }
-    }
-
-    #endregion
-
-
-    #region ObservableCollectionExtensions
-
-#if USE_INTERNAL
-    internal
-#else
-    public
-#endif
-        static class ObservableCollectionExtensions
-    {
-        public static int ReplaceAll<T>(this ObservableCollection<T> source, T newItem, Func<T, bool> predicate)
-        {
-            Contract.Requires<ArgumentNullException>(source != null);
-            Contract.Requires<ArgumentNullException>(newItem != null);
-            Contract.Requires<ArgumentNullException>(predicate != null);
-
-            return source.ReplaceAll(t => newItem, predicate);
-        }
-
-        public static int ReplaceAll<T>(this ObservableCollection<T> source, Func<T, T> newItem, Func<T, bool> predicate)
-        {
-            Contract.Requires<ArgumentNullException>(source != null);
-            Contract.Requires<ArgumentNullException>(newItem != null);
-            Contract.Requires<ArgumentNullException>(predicate != null);
-
-            int matchedCount = 0;
-            for (int i = 0; i <= source.Count - 1; i++)
-            {
-                var item = source[i];
-                if (predicate(item))
-                {
-                    source[i] = newItem(item);
-                    matchedCount++;
-                }
-            }
-            return matchedCount;
-        }
-
-        public static ReadOnlyObservableCollection<T> ToReadOnly<T>(this ObservableCollection<T> source)
-        {
-            Contract.Requires<ArgumentNullException>(source != null);
-
-            return new ReadOnlyObservableCollection<T>(source);
-        }
-
-        /// <summary>一対一の射影により新たな ObservableCollection を作成します。</summary>
-        public static ObservableCollection<TResult> SelectNew<Tfrom, TResult>(this ObservableCollection<Tfrom> source, Func<Tfrom, TResult> selector)
-        {
-            Contract.Requires<ArgumentNullException>(source != null);
-            Contract.Requires<ArgumentNullException>(selector != null);
-
-            return INotifyCollectionChangedExtensions.SelectNew<Tfrom, TResult>(source, selector);
-        }
-
-        public static void Update<T>(this ObservableCollection<T> source, IEnumerable<T> updateCollection)
-        {
-            Contract.Requires<ArgumentNullException>(source != null);
-            Contract.Requires<ArgumentNullException>(updateCollection != null);
-
-            source.Update(updateCollection, EqualityComparer<T>.Default);
-        }
-
-        /// <summary>ObservableCollection の内容をコレクションと比較し、それぞれの要素数を合わせます。順序は保存されません。</summary>
-        public static void Update<T>(this ObservableCollection<T> source, IEnumerable<T> updateCollection, IEqualityComparer<T> comparer)
-        {
-            Contract.Requires<ArgumentNullException>(source != null);
-            Contract.Requires<ArgumentNullException>(updateCollection != null);
-            Contract.Requires<ArgumentNullException>(comparer != null);
-
-            // updateCollection の数 - source の数
-            IDictionary<T, int> 要素の増減量 = new Dictionary<T, int>();
-
-            foreach (var s in source)
-            {
-                if (要素の増減量.ContainsKey(s))
-                {
-                    要素の増減量[s]--;
-                }
-                else
-                {
-                    要素の増減量[s] = -1;
-                }
-            }
-
-            foreach (var u in updateCollection)
-            {
-                if (要素の増減量.ContainsKey(u))
-                {
-                    要素の増減量[u]++;
-                }
-                else
-                {
-                    要素の増減量[u] = 1;
-                }
-            }
-
-            foreach (var i in 要素の増減量.Where(p => p.Value < 0))
-            {
-                source.Remove(i.Key);
-            }
-
-            foreach (var i in 要素の増減量.Where(p => p.Value > 0))
-            {
-                source.Add(i.Key);
-            }
-        }
-    }
-
-    #endregion
-
-
-    #region ReadOnlyObservableCollectionExtensions
-
-#if USE_INTERNAL
-    internal
-#else
-    public
-#endif
-        static class ReadOnlyObservableCollectionExtensions
-    {
-        /// <summary>一対多の射影により新たな ReadOnlyObservableCollection を作成します。</summary>
-        public static ReadOnlyObservableCollection<TResult> SelectNew<Tfrom, TResult>(this ReadOnlyObservableCollection<Tfrom> source, Func<Tfrom, TResult> selector)
-        {
-            Contract.Requires<ArgumentNullException>(source != null);
-            Contract.Requires<ArgumentNullException>(selector != null);
-
-            return INotifyCollectionChangedExtensions.SelectNew<Tfrom, TResult>(source, selector).ToReadOnly();
         }
     }
 
@@ -2069,14 +2066,14 @@ namespace Kirinji.LightWands
 namespace Kirinji.LightWands.Tests
 {
 
-    #region IEnumerableExtensions
+    #region EnumerableEx
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static class IEnumerableExtensions
+        static partial class EnumerableEx
     {
         public static void IsSequenceEqual<T>(this IEnumerable<T> source, params T[] second)
         {
@@ -2124,14 +2121,14 @@ namespace Kirinji.LightWands.Tests
     #endregion
 
 
-    #region IObservableExtensions
+    #region ObservableEx
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static class IObservableExtensions
+        static partial class ObservableEx
     {
         /// <summary>Starts subscribing and cache pushed values.</summary>
         public static History<T> SubscribeHistory<T>(this IObservable<T> source)
@@ -2227,14 +2224,14 @@ namespace Kirinji.LightWands.Tests
     #endregion
 
 
-    #region PrivateObjectExtensions
+    #region PrivateObjectEx
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static class PrivateObjectExtensions
+        static class PrivateObjectEx
     {
         public static object Invoke<T>(this PrivateObject source, string name, T param)
         {
