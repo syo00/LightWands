@@ -156,7 +156,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-        static class DictionaryEx
+    static partial class DictionaryEx
     {
         public static TValue ValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> source, TKey key)
         {
@@ -198,12 +198,39 @@ namespace Kirinji.LightWands
             }
         }
 
+        public static IEnumerable<T> Do<T>(this IEnumerable<T> source, Action<T, int> action)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(action != null);
+
+            int index = 0;
+            foreach (var item in source)
+            {
+                action(item, index);
+                index++;
+                yield return item;
+            }
+        }
+
         public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
         {
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(action != null);
 
             foreach (var item in source) action(item);
+        }
+
+        public static void ForEach<T>(this IEnumerable<T> source, Action<T, int> action)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(action != null);
+
+            int index = 0;
+            foreach (var item in source)
+            {
+                action(item, index);
+                index++;
+            }
         }
 
         public static async Task ForEachAsync<T>(this IEnumerable<T> source, Func<T, Task> actionAsync)
@@ -214,6 +241,19 @@ namespace Kirinji.LightWands
             foreach (var item in source)
             {
                 await actionAsync(item);
+            }
+        }
+
+        public static async Task ForEachAsync<T>(this IEnumerable<T> source, Func<T, int, Task> actionAsync)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(actionAsync != null);
+
+            int index = 0;
+            foreach (var item in source)
+            {
+                await actionAsync(item, index);
+                index++;
             }
         }
 
@@ -498,7 +538,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-        static class ListEx
+        static partial class ListEx
     {
         public static bool RemoveFirst<T>(this IList<T> source, Func<T, bool> predicate)
         {
@@ -642,8 +682,6 @@ namespace Kirinji.LightWands
             returnList.Reverse();
             return returnList;
         }
-
-
     }
 
     #endregion
@@ -2054,6 +2092,48 @@ namespace Kirinji.LightWands
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+    }
+
+    #endregion
+
+
+    #region DictionaryEx
+
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    static partial class DictionaryEx
+    {
+        public static IReadOnlyDictionary<TKey, TValue> ToReadOnly<TKey, TValue>(this IDictionary<TKey, TValue> source)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Ensures(Contract.Result<IReadOnlyDictionary<TKey, TValue>>() != null);
+
+            return new ReadOnlyDictionary<TKey, TValue>(source);
+        }
+    }
+
+    #endregion
+
+
+    #region ListEx
+
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    static partial class ListEx
+    {
+        public static IReadOnlyList<T> ToReadOnly<T>(this IList<T> source)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Ensures(Contract.Result<IReadOnlyCollection<T>>() != null);
+
+            return new ReadOnlyCollection<T>(source);
         }
     }
 
