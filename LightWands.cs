@@ -225,10 +225,20 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(action != null);
 
+            source.ForEach((t, i, c) => action(t, i));
+        }
+
+        public static void ForEach<T>(this IEnumerable<T> source, Action<T, int, ICancellable> action)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(action != null);
+
             int index = 0;
+            var cancellable = new Cancellable();
             foreach (var item in source)
             {
-                action(item, index);
+                action(item, index, cancellable);
+                if (cancellable.IsStopped) return;
                 index++;
             }
         }
@@ -249,12 +259,37 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(actionAsync != null);
 
+            await source.ForEachAsync((item, i, c) => actionAsync(item, i));
+        }
+
+        public static async Task ForEachAsync<T>(this IEnumerable<T> source, Func<T, int, ICancellable, Task> actionAsync)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(actionAsync != null);
+
             int index = 0;
+            var cancellable = new Cancellable();
             foreach (var item in source)
             {
-                await actionAsync(item, index);
+                await actionAsync(item, index, cancellable);
+                if (cancellable.IsStopped) return;
                 index++;
             }
+        }
+
+        public interface ICancellable
+        {
+            void Stop();
+        }
+
+        class Cancellable : ICancellable
+        {
+            public void Stop()
+            {
+                IsStopped = true;
+            }
+
+            public bool IsStopped { get; private set; }
         }
 
         public static IEnumerable<T> Hide<T>(this IEnumerable<T> source)
@@ -1313,10 +1348,13 @@ namespace Kirinji.LightWands
 
 
     #region NotifyCollectionChangedEx
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
     static class NotifyCollectionChangedEx
     {
-        // SelectNew と SelectManyNew を public にしないのは、ReadOnlyObservableCollection も ObservableCollection にしてしまうから。そのため、ラッパークラスを別のクラスに作成している
-
         /// <summary>
         /// INotifyCollectionChanged から ObservableCollection を一対一の射影により作成します。IEnumerable もあわせて継承しているクラスの場合、ObservableCollection にもそれらの要素を追加します。
         /// </summary>
@@ -1351,27 +1389,45 @@ namespace Kirinji.LightWands
         /// NotifyCollectionChangedEventArgs の内容を ObservableCollection に反映します。
         /// </summary>
         /// <param name="changeCollection">このコレクションの要素が変更されます。</param>
-        public static void ApplyNotifyCollectionChangedEventArgsToObservableCollection<TSource, TCollectionChanged>(ObservableCollection<TSource> changeCollection, NotifyCollectionChangedEventArgs e, Func<TCollectionChanged, TSource> converter)
+        public static void ApplyNotifyCollectionChangedEventArgsToObservableCollection<Tsource, TcollectionChanged>(ObservableCollection<Tsource> changeCollection, NotifyCollectionChangedEventArgs e, Func<TcollectionChanged, Tsource> converter)
         {
+            Contract.Requires<ArgumentNullException>(changeCollection != null);
             Contract.Requires<ArgumentNullException>(e != null);
 
-            switch (e.Action)
+            try
             {
-                case NotifyCollectionChangedAction.Add:
-                    e.NewItems.Cast<TCollectionChanged>().ForEach(i => changeCollection.Add(converter(i)));
-                    return;
-                case NotifyCollectionChangedAction.Move:
-                    changeCollection.Move(e.OldStartingIndex, e.NewStartingIndex);
-                    return;
-                case NotifyCollectionChangedAction.Remove:
-                    changeCollection.RemoveAt(e.OldStartingIndex);
-                    return;
-                case NotifyCollectionChangedAction.Replace:
-                    changeCollection[e.NewStartingIndex] = converter((TCollectionChanged)e.NewItems[0]);
-                    return;
-                case NotifyCollectionChangedAction.Reset:
-                    changeCollection.Clear();
-                    return;
+                switch (e.Action)
+                {
+                    case NotifyCollectionChangedAction.Add:
+                        foreach (var i in e.NewItems.Cast<TcollectionChanged>())
+                        {
+                            changeCollection.Add(converter(i));
+                        }
+                        return;
+                    case NotifyCollectionChangedAction.Move:
+                        changeCollection.Move(e.OldStartingIndex, e.NewStartingIndex);
+                        return;
+                    case NotifyCollectionChangedAction.Remove:
+                        changeCollection.RemoveAt(e.OldStartingIndex);
+                        return;
+                    case NotifyCollectionChangedAction.Replace:
+                        changeCollection[e.NewStartingIndex] = converter((TcollectionChanged)e.NewItems[0]);
+                        return;
+                    case NotifyCollectionChangedAction.Reset:
+                        changeCollection.Clear();
+                        if (e.NewItems != null)
+                        {
+                            foreach (var i in e.NewItems.Cast<TcollectionChanged>())
+                            {
+                                changeCollection.Add(converter(i));
+                            }
+                        }
+                        return;
+                }
+            }
+            catch (NullReferenceException)
+            {
+                // 原因不明の例外
             }
         }
     }
@@ -1421,17 +1477,6 @@ namespace Kirinji.LightWands
 
             return new ReadOnlyObservableCollection<T>(source);
         }
-
-        /// <summary>一対一の射影により新たな ObservableCollection を作成します。</summary>
-        public static ObservableCollection<TResult> SelectNew<TFrom, TResult>(this ObservableCollection<TFrom> source, Func<TFrom, TResult> selector)
-        {
-            Contract.Requires<ArgumentNullException>(source != null);
-            Contract.Requires<ArgumentNullException>(selector != null);
-
-            return NotifyCollectionChangedEx.SelectNew<TFrom, TResult>(source, selector);
-        }
-
-        
 
         public static void Update<T>(this ObservableCollection<T> source, IEnumerable<T> updateCollection)
         {
@@ -1484,28 +1529,6 @@ namespace Kirinji.LightWands
             {
                 source.Add(i.Key);
             }
-        }
-    }
-
-    #endregion
-
-
-    #region ReadOnlyObservableCollectionEx
-
-#if USE_INTERNAL
-    internal
-#else
-    public
-#endif
-        static class ReadOnlyObservableCollectionEx
-    {
-        /// <summary>一対多の射影により新たな ReadOnlyObservableCollection を作成します。</summary>
-        public static ReadOnlyObservableCollection<TResult> SelectNew<Tfrom, TResult>(this ReadOnlyObservableCollection<Tfrom> source, Func<Tfrom, TResult> selector)
-        {
-            Contract.Requires<ArgumentNullException>(source != null);
-            Contract.Requires<ArgumentNullException>(selector != null);
-
-            return NotifyCollectionChangedEx.SelectNew<Tfrom, TResult>(source, selector).ToReadOnly();
         }
     }
 
@@ -1783,6 +1806,18 @@ namespace Kirinji.LightWands
                         observer.OnCompleted);
                 return s;
             });
+        }
+
+        public static IObservable<T> DoWhenDebug<T>(this IObservable<T> source, Action<T> action)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(action != null);
+
+#if DEBUG
+            return source.Do(action);
+#else
+            return source;
+#endif
         }
     }
 
