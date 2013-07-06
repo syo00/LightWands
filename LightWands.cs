@@ -1328,7 +1328,7 @@ namespace Kirinji.LightWands
 #endif
     static class ReadOnlyDictionaryEx
     {
-        public static TValue ValueOrDefault<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> source, TKey key)
+        public static TValue ValueOrDefaultByReadOnly<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> source, TKey key)
         {
             Contract.Requires<ArgumentNullException>(source != null);
 
