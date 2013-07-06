@@ -212,6 +212,18 @@ namespace Kirinji.LightWands
             }
         }
 
+        public static IEnumerable<T> DoWhenDebug<T>(this IEnumerable<T> source, Action<T> action)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(action != null);
+
+#if DEBUG
+            return source.Do(action);
+#else
+            return source;
+#endif
+        }
+
         public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
         {
             Contract.Requires<ArgumentNullException>(source != null);
