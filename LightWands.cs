@@ -105,14 +105,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region EnumerableEx
+    #region EnumerableExtensions
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static partial class EnumerableEx
+    static partial class EnumerableExtensions
     {
         public static IEnumerable<T> Empty<T>()
         {
@@ -128,14 +128,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region CollectionEx
+    #region CollectionExtensions
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static class CollectionEx
+    static class CollectionExtensions
     {
         public static void AddRange<T>(this ICollection<T> source, IEnumerable<T> collection)
         {
@@ -149,14 +149,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region DictionaryEx
+    #region DictionaryExtensions
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-    static partial class DictionaryEx
+    static partial class DictionaryExtensions
     {
         public static TValue ValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> source, TKey key)
         {
@@ -177,14 +177,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region EnumerableEx
+    #region EnumerableExtensions
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static partial class EnumerableEx
+    static partial class EnumerableExtensions
     {
         public static IEnumerable<T> Do<T>(this IEnumerable<T> source, Action<T> action)
         {
@@ -578,14 +578,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region ListEx
+    #region ListExtensions
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static partial class ListEx
+    static partial class ListExtensions
     {
         public static bool RemoveFirst<T>(this IList<T> source, Func<T, bool> predicate)
         {
@@ -734,14 +734,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region StringEx
+    #region StringExtensions
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static class StringEx
+    static class StringExtensions
     {
         /// <summary>
         /// 改行も Trim する
@@ -1331,14 +1331,14 @@ namespace Kirinji.LightWands
 
 #if NET45_WINRT45_WP8 || TESTS
 
-    #region ReadOnlyDictionaryEx
+    #region ReadOnlyDictionaryExtensions
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-    static class ReadOnlyDictionaryEx
+    static class ReadOnlyDictionaryExtensions
     {
         public static TValue ValueOrDefaultByReadOnly<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> source, TKey key)
         {
@@ -1359,13 +1359,13 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region NotifyCollectionChangedEx
+    #region NotifyCollectionChangedExtensions
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-    static class NotifyCollectionChangedEx
+    static class NotifyCollectionChangedExtensions
     {
         /// <summary>
         /// INotifyCollectionChanged から ObservableCollection を一対一の射影により作成します。IEnumerable もあわせて継承しているクラスの場合、ObservableCollection にもそれらの要素を追加します。
@@ -1446,14 +1446,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region ObservableCollectionEx
+    #region ObservableCollectionExtensions
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static class ObservableCollectionEx
+    static class ObservableCollectionExtensions
     {
         public static int ReplaceAll<T>(this ObservableCollection<T> source, T newItem, Func<T, bool> predicate)
         {
@@ -1549,12 +1549,72 @@ namespace Kirinji.LightWands
 
     #region ObservableEx
 
+    #if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    static partial class ObservableExtensions
+    {
+        public static IObservable<T> Empty<T>()
+        {
+            Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+
+            var emptyObservable = Observable.Empty<T>();
+            Contract.Assume(emptyObservable != null);
+            return emptyObservable;
+        }
+
+        public static IObservable<T> Empty<T>(IScheduler scheduler)
+        {
+            Contract.Requires<ArgumentNullException>(scheduler != null);
+            Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+
+            var emptyObservable = Observable.Empty<T>(scheduler);
+            Contract.Assume(emptyObservable != null);
+            return emptyObservable;
+        }
+
+        public static IObservable<T> Never<T>()
+        {
+            Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+
+            var neverObservable = Observable.Never<T>();
+            Contract.Assume(neverObservable != null);
+            return neverObservable;
+        }
+
+        public static IObservable<T> Return<T>(T value)
+        {
+            Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+
+            var returnObservable = Observable.Return<T>(value);
+            Contract.Assume(returnObservable != null);
+            return returnObservable;
+        }
+
+        public static IObservable<T> Return<T>(T value, IScheduler scheduler)
+        {
+            Contract.Requires<ArgumentNullException>(scheduler != null);
+            Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+
+            var returnObservable = Observable.Return<T>(value, scheduler);
+            Contract.Assume(returnObservable != null);
+            return returnObservable;
+        }
+    }
+
+    #endregion
+
+
+    #region ObservableExtensions
+
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
- static partial class ObservableEx
+    static partial class ObservableExtensions
     {
         public static T MostRecentValue<T>(this IObservable<T> source)
         {
@@ -2145,14 +2205,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region DictionaryEx
+    #region DictionaryExtensions
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-    static partial class DictionaryEx
+    static partial class DictionaryExtensions
     {
         public static IReadOnlyDictionary<TKey, TValue> ToReadOnly<TKey, TValue>(this IDictionary<TKey, TValue> source)
         {
@@ -2166,14 +2226,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region ListEx
+    #region ListExtensions
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-    static partial class ListEx
+    static partial class ListExtensions
     {
         public static IReadOnlyList<T> ToReadOnly<T>(this IList<T> source)
         {
@@ -2193,14 +2253,14 @@ namespace Kirinji.LightWands
 namespace Kirinji.LightWands.Tests
 {
 
-    #region EnumerableEx
+    #region EnumerableExtensions
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static partial class EnumerableEx
+    static partial class EnumerableExtensions
     {
         public static void IsSequenceEqual<T>(this IEnumerable<T> source, params T[] second)
         {
@@ -2248,14 +2308,14 @@ namespace Kirinji.LightWands.Tests
     #endregion
 
 
-    #region ObservableEx
+    #region ObservableExtensions
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static partial class ObservableEx
+    static partial class ObservableExtensions
     {
         /// <summary>Starts subscribing and cache pushed values.</summary>
         public static History<T> SubscribeHistory<T>(this IObservable<T> source)
@@ -2351,14 +2411,14 @@ namespace Kirinji.LightWands.Tests
     #endregion
 
 
-    #region PrivateObjectEx
+    #region PrivateObjectExtensions
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-        static class PrivateObjectEx
+    static class PrivateObjectExtensions
     {
         public static object Invoke<T>(this PrivateObject source, string name, T param)
         {
