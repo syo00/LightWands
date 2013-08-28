@@ -1382,6 +1382,56 @@ namespace Kirinji.LightWands
     #endregion
 
 
+    #region NotifyCollectionChangedEx
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    static class NotifyCollectionChangedEx
+    {
+        /// <summary>
+        /// NotifyCollectionChangedEventArgs の内容を ObservableCollection に反映します。
+        /// </summary>
+        /// <param name="changeCollection">このコレクションの要素が変更されます。</param>
+        public static void ApplyNotifyCollectionChangedEventArgsToObservableCollection<Tsource, TcollectionChanged>(ObservableCollection<Tsource> changeCollection, NotifyCollectionChangedEventArgs e, Func<TcollectionChanged, Tsource> converter)
+        {
+            Contract.Requires<ArgumentNullException>(changeCollection != null);
+            Contract.Requires<ArgumentNullException>(e != null);
+
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    foreach (var i in e.NewItems.Cast<TcollectionChanged>())
+                    {
+                        changeCollection.Add(converter(i));
+                    }
+                    return;
+                case NotifyCollectionChangedAction.Move:
+                    changeCollection.Move(e.OldStartingIndex, e.NewStartingIndex);
+                    return;
+                case NotifyCollectionChangedAction.Remove:
+                    changeCollection.RemoveAt(e.OldStartingIndex);
+                    return;
+                case NotifyCollectionChangedAction.Replace:
+                    changeCollection[e.NewStartingIndex] = converter((TcollectionChanged)e.NewItems[0]);
+                    return;
+                case NotifyCollectionChangedAction.Reset:
+                    changeCollection.Clear();
+                    if (e.NewItems != null)
+                    {
+                        foreach (var i in e.NewItems.Cast<TcollectionChanged>())
+                        {
+                            changeCollection.Add(converter(i));
+                        }
+                    }
+                    return;
+            }
+        }
+    }
+    #endregion
+
+
     #region NotifyCollectionChangedExtensions
 #if USE_INTERNAL
     internal
@@ -1416,54 +1466,8 @@ namespace Kirinji.LightWands
                     newOc = new ObservableCollection<TResult>();
                 }
             }
-            newOc.CollectionChanged += (_, e) => ApplyNotifyCollectionChangedEventArgsToObservableCollection(newOc, e, selector);
+            newOc.CollectionChanged += (_, e) => NotifyCollectionChangedEx.ApplyNotifyCollectionChangedEventArgsToObservableCollection(newOc, e, selector);
             return newOc;
-        }
-
-        /// <summary>
-        /// NotifyCollectionChangedEventArgs の内容を ObservableCollection に反映します。
-        /// </summary>
-        /// <param name="changeCollection">このコレクションの要素が変更されます。</param>
-        public static void ApplyNotifyCollectionChangedEventArgsToObservableCollection<Tsource, TcollectionChanged>(ObservableCollection<Tsource> changeCollection, NotifyCollectionChangedEventArgs e, Func<TcollectionChanged, Tsource> converter)
-        {
-            Contract.Requires<ArgumentNullException>(changeCollection != null);
-            Contract.Requires<ArgumentNullException>(e != null);
-
-            try
-            {
-                switch (e.Action)
-                {
-                    case NotifyCollectionChangedAction.Add:
-                        foreach (var i in e.NewItems.Cast<TcollectionChanged>())
-                        {
-                            changeCollection.Add(converter(i));
-                        }
-                        return;
-                    case NotifyCollectionChangedAction.Move:
-                        changeCollection.Move(e.OldStartingIndex, e.NewStartingIndex);
-                        return;
-                    case NotifyCollectionChangedAction.Remove:
-                        changeCollection.RemoveAt(e.OldStartingIndex);
-                        return;
-                    case NotifyCollectionChangedAction.Replace:
-                        changeCollection[e.NewStartingIndex] = converter((TcollectionChanged)e.NewItems[0]);
-                        return;
-                    case NotifyCollectionChangedAction.Reset:
-                        changeCollection.Clear();
-                        if (e.NewItems != null)
-                        {
-                            foreach (var i in e.NewItems.Cast<TcollectionChanged>())
-                            {
-                                changeCollection.Add(converter(i));
-                            }
-                        }
-                        return;
-                }
-            }
-            catch (NullReferenceException)
-            {
-                // 原因不明の例外
-            }
         }
     }
     #endregion
