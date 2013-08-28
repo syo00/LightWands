@@ -1581,7 +1581,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static partial class ObservableExtensions
+    static partial class ObservableEx
     {
         public static IObservable<T> Empty<T>()
         {
