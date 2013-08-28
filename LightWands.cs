@@ -158,6 +158,29 @@ namespace Kirinji.LightWands
 #endif
     static partial class DictionaryExtensions
     {
+        public static IEnumerable<TKey> RemoveAll<TKey, TValue>(this IDictionary<TKey, TValue> source, Func<TKey, bool> predicate)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(predicate != null);
+            Contract.Ensures(Contract.Result<IEnumerable<TKey>>() != null);
+
+            var removingKeys = new List<TKey>();
+            foreach (var pair in source)
+            {
+                if (predicate(pair.Key))
+                {
+                    removingKeys.Add(pair.Key);
+                }
+            }
+
+            foreach (var removingKey in removingKeys)
+            {
+                source.Remove(removingKey);
+            }
+
+            return removingKeys;
+        }
+
         public static TValue ValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> source, TKey key)
         {
             Contract.Requires<ArgumentNullException>(source != null);
