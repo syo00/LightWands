@@ -105,14 +105,14 @@ namespace Kirinji.LightWands
     #endregion
 
 
-    #region EnumerableExtensions
+    #region EnumerableEx
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-    static partial class EnumerableExtensions
+    static partial class EnumerableEx
     {
         public static IEnumerable<T> Empty<T>()
         {
@@ -1353,6 +1353,61 @@ namespace Kirinji.LightWands
 #endif
 
 #if NET45_WINRT45_WP8 || TESTS
+
+    #region ArrayExtensions
+
+    public static class ArrayExtensions
+    {
+        public static IReadOnlyList<T> ToReadOnly<T>(this T[] source)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Ensures(Contract.Result<IReadOnlyCollection<T>>() != null);
+
+            return new ReadOnlyArray<T>(source);
+        }
+
+        class ReadOnlyArray<T> : IReadOnlyList<T>
+        {
+            readonly T[] array;
+
+            public ReadOnlyArray(T[] array)
+            {
+                Contract.Requires<ArgumentNullException>(array != null);
+                
+                this.array = array;
+            }
+
+            [ContractInvariantMethod]
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
+            private void ObjectInvariant()
+            {
+                Contract.Invariant(array != null);
+            }
+
+            public int Count
+            {
+                get { return array.Length; }
+            }
+
+            public IEnumerator<T> GetEnumerator()
+            {
+                return array.AsEnumerable().GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+
+            public T this[int index]
+            {
+                get { return array[index]; }
+            }
+        }
+    }
+
+    #endregion
+
 
     #region ReadOnlyDictionaryExtensions
 
