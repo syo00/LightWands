@@ -1,6 +1,6 @@
 ﻿//-----------------------------------------------------------------------
 // <copyright file="LightWands.cs">
-//    Copyright (c) 2013, syo00.
+//    Copyright (c) 2013-2013, syo00.
 //
 //    Licensed under the MIT License (the "License");
 //    you may not use this file except in compliance with the License.
@@ -28,17 +28,17 @@
 /***** targeting projects ******/
 // NOTE: select one number from (1), (2), or (3) by your project and uncomment its corresponding #define. You do not have to uncomment more than two #define lines in (1) to (3).
 
-// (1) If you want to apply for below projects, uncomment below #define TESTS
+// (1) If you want to apply for below projects, uncomment #define TESTS and add reference to System.Runtime.Serialization.
 //     * tests for .NET Framework 4.5
 //#define TESTS
 
-// (2) Else if you want to apply for below projects (including portable class libraries), uncomment below #define NET45_WINRT45_WP8
+// (2) Else if you want to apply for below projects (including portable class libraries), uncomment #define NET45_WINRT45_WP8.
 //     * .NET Framework 4.5
 //     * Windows store application     
 //     * Windows Phone 8
 //#define NET45_WINRT45_WP8
 
-// (3) Else if you want to apply for below projects (including portable class libraries), uncomment below #define NET40_SL5_WINRT45_WP8
+// (3) Else if you want to apply for below projects (including portable class libraries), uncomment #define NET40_SL5_WINRT45_WP8.
 //     * .NET Framework 4.0
 //     * Silverlight 5
 //     * Windows store application
@@ -58,6 +58,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Runtime.Serialization;
 #endif
 
 using System;
@@ -1366,8 +1367,10 @@ namespace Kirinji.LightWands
             return new ReadOnlyArray<T>(source);
         }
 
+        [DataContract]
         class ReadOnlyArray<T> : IReadOnlyList<T>
         {
+            [DataMember]
             readonly T[] array;
 
             public ReadOnlyArray(T[] array)
@@ -1453,10 +1456,12 @@ namespace Kirinji.LightWands
         {
             Contract.Requires<ArgumentNullException>(changeCollection != null);
             Contract.Requires<ArgumentNullException>(e != null);
+            Contract.Requires<ArgumentNullException>(converter != null);
 
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
+                    if (e.NewItems == null) return;
                     foreach (var i in e.NewItems.Cast<TcollectionChanged>())
                     {
                         changeCollection.Add(converter(i));
@@ -1473,12 +1478,10 @@ namespace Kirinji.LightWands
                     return;
                 case NotifyCollectionChangedAction.Reset:
                     changeCollection.Clear();
-                    if (e.NewItems != null)
+                    if (e.NewItems == null) return;
+                    foreach (var i in e.NewItems.Cast<TcollectionChanged>())
                     {
-                        foreach (var i in e.NewItems.Cast<TcollectionChanged>())
-                        {
-                            changeCollection.Add(converter(i));
-                        }
+                        changeCollection.Add(converter(i));
                     }
                     return;
             }
@@ -1643,7 +1646,7 @@ namespace Kirinji.LightWands
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
 
             var emptyObservable = Observable.Empty<T>();
-            Contract.Assume(emptyObservable != null);
+            Contract.Assert(emptyObservable != null);
             return emptyObservable;
         }
 
@@ -1653,7 +1656,7 @@ namespace Kirinji.LightWands
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
 
             var emptyObservable = Observable.Empty<T>(scheduler);
-            Contract.Assume(emptyObservable != null);
+            Contract.Assert(emptyObservable != null);
             return emptyObservable;
         }
 
@@ -1662,7 +1665,7 @@ namespace Kirinji.LightWands
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
 
             var neverObservable = Observable.Never<T>();
-            Contract.Assume(neverObservable != null);
+            Contract.Assert(neverObservable != null);
             return neverObservable;
         }
 
@@ -1671,7 +1674,7 @@ namespace Kirinji.LightWands
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
 
             var returnObservable = Observable.Return<T>(value);
-            Contract.Assume(returnObservable != null);
+            Contract.Assert(returnObservable != null);
             return returnObservable;
         }
 
@@ -1681,7 +1684,7 @@ namespace Kirinji.LightWands
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
 
             var returnObservable = Observable.Return<T>(value, scheduler);
-            Contract.Assume(returnObservable != null);
+            Contract.Assert(returnObservable != null);
             return returnObservable;
         }
     }
@@ -1702,14 +1705,18 @@ namespace Kirinji.LightWands
         {
             Contract.Requires<ArgumentNullException>(source != null);
 
-            return source.MostRecent(default(T)).First();
+            var value = source.MostRecent(default(T)).First();
+            Contract.Assume(value != null);
+            return value;
         }
 
         public static T MostRecentValue<T>(this IObservable<T> source, T missingValue)
         {
             Contract.Requires<ArgumentNullException>(source != null);
 
-            return source.MostRecent(missingValue).First();
+            var value = source.MostRecent(missingValue).First();
+            Contract.Assume(value != null);
+            return value;
         }
 
         /// <summary>Invokes actions when subscriptions count changes 0 to 1 or 1 to 0.</summary>
@@ -1722,7 +1729,7 @@ namespace Kirinji.LightWands
 
             var refCount = 0;
 
-            return Observable.Create<T>(obs =>
+            var value = Observable.Create<T>(obs =>
             {
                 if (refCount == 0) onStarted();
                 refCount++;
@@ -1735,6 +1742,8 @@ namespace Kirinji.LightWands
                     })
                     .Subscribe(obs);
             });
+            Contract.Assert(value != null);
+            return value;
         }
 
         /// <summary>Passes values when subscribed.</summary>
@@ -1745,7 +1754,7 @@ namespace Kirinji.LightWands
 
             var refCount = 0;
 
-            return Observable.Create<T>(obs =>
+            var value = Observable.Create<T>(obs =>
             {
                 refCount++;
 
@@ -1754,6 +1763,8 @@ namespace Kirinji.LightWands
                     .Where(_ => refCount >= 1)
                     .Subscribe(obs);
             });
+            Contract.Assert(value != null);
+            return value;
         }
 
         public class SelectorResult<T>
@@ -1813,7 +1824,7 @@ namespace Kirinji.LightWands
 
             CompositeDisposable disposable = new CompositeDisposable();
 
-            return Observable.Create<SelectorResult<T>>(observer =>
+            var value = Observable.Create<SelectorResult<T>>(observer =>
             {
                 return selector.Subscribe(ary =>
                 {
@@ -1839,6 +1850,8 @@ namespace Kirinji.LightWands
                 observer.OnError,
                 observer.OnCompleted);
             });
+            Contract.Assert(value != null);
+            return value;
         }
 
         public static IObservable<SelectorResult<T>> Selector<T>(this IObservable<IEnumerable<int>> selector, params IObservable<T>[] sources)
@@ -1865,7 +1878,9 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(sources != null);
             Contract.Ensures(Contract.Result<IObservable<SelectorResult<T>>>() != null);
 
-            return selector.Selector(sources.AsEnumerable());
+            var parameter = sources.AsEnumerable();
+            Contract.Assume(parameter != null);
+            return selector.Selector(parameter);
         }
 
         public sealed class ValueOrError<TValue, TException> : IEquatable<ValueOrError<TValue, TException>> where TException : Exception
@@ -1931,9 +1946,11 @@ namespace Kirinji.LightWands
 
             var f = Observable.Merge(Observable.Throw<ValueOrError<TValue, TException>>(new Exception()), Observable.Empty<ValueOrError<TValue, TException>>());
 
-            return source
+            var value = source
                 .Select(v => new ValueOrError<TValue, TException>(v)) // Catch では射影できないので、まずここで通常の値を変換
                 .Catch((TException ex) => Observable.Return(new ValueOrError<TValue, TException>(ex))); // そしてここでエラーを変換
+            Contract.Assert(value != null);
+            return value;
         }
 
         public static IObservable<TValue> ExtractError<TValue, TException>(this IObservable<ValueOrError<TValue, TException>> source) where TException : Exception
@@ -1941,7 +1958,7 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IObservable<TValue>>() != null);
 
-            return Observable.Create<TValue>(observer =>
+            var value = Observable.Create<TValue>(observer =>
             {
                 var s = source
                     .Where(x => x != null)
@@ -1960,6 +1977,8 @@ namespace Kirinji.LightWands
                         observer.OnCompleted);
                 return s;
             });
+            Contract.Assert(value != null);
+            return value;
         }
 
         public static IObservable<T> DoWhenDebug<T>(this IObservable<T> source, Action<T> action)
@@ -2166,12 +2185,14 @@ namespace Kirinji.LightWands
         public bool TryGetValue(TKey key, out TValue value)
         {
             var index = this.keys.IndexOf(key);
-            if (index == -1)
+            if (index <= -1)
             {
                 value = default(TValue);
+                Contract.Assume(!ContainsKey(key));
                 return false;
             }
             value = this.values[index];
+            Contract.Assume(ContainsKey(key));
             return true;
         }
 
