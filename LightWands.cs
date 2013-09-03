@@ -315,12 +315,12 @@ namespace Kirinji.LightWands
 
         public interface ICancellable
         {
-            void Stop();
+            void Cancel();
         }
 
         class Cancellable : ICancellable
         {
-            public void Stop()
+            public void Cancel()
             {
                 IsStopped = true;
             }
