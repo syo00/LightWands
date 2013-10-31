@@ -1359,6 +1359,190 @@ namespace Kirinji.LightWands
 
     #endregion
 
+
+    #region ObjectEx
+
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    static class ObjectEx
+    {
+        /// <summary>Null-safe method for GetHashCode.</summary>
+        public static int GetHashCode<T>(T value)
+        {
+            if (value == null) return 0;
+            return value.GetHashCode();
+        }
+
+        /// <summary>Null-safe method for ToString.</summary>
+        public static string ToString<T>(T value)
+        {
+            Contract.Ensures(Contract.Result<string>() != null);
+
+            return ToString(value, "Null");
+        }
+
+        /// <summary>
+        /// Null-safe method for ToString.
+        /// </summary>
+        /// <param name="nullString">Returning string value when vakue is null.</param>
+        public static string ToString<T>(T value, string nullString)
+        {
+            Contract.Requires<ArgumentNullException>(nullString != null);
+            Contract.Ensures(Contract.Result<string>() != null);
+
+            if (value == null) return nullString;
+            return value.ToString();
+        }
+    }
+
+    #endregion
+
+
+    #region Choice
+
+    /// <summary>F# の判別共用体を再現した機能を提供します。</summary>
+    #if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    sealed class Choice<T1, T2> : IEquatable<Choice<T1, T2>>
+    {
+        readonly int valueIndex;
+        readonly T1 value1;
+        readonly T2 value2;
+
+        public Choice(T1 value1)
+        {
+            this.value1 = value1;
+        }
+
+        public Choice(T2 value2)
+        {
+            this.value2 = value2;
+            this.valueIndex = 1;
+        }
+
+        [ContractInvariantMethod]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
+        private void ObjectInvariant()
+        {
+            Contract.Invariant(0 <= valueIndex && valueIndex <= 1);
+        }
+
+        public static Choice<T1, T2> Create(T1 value1)
+        {
+            Contract.Ensures(Contract.Result<Choice<T1, T2>>() != null);
+
+            return new Choice<T1, T2>(value1);
+        }
+
+        public static Choice<T1, T2> Create(T2 value2)
+        {
+            Contract.Ensures(Contract.Result<Choice<T1, T2>>() != null);
+
+            return new Choice<T1, T2>(value2);
+        }
+
+        /// <summary>戻り値のあるパターンマッチを行います。</summary>
+        public T Match<T>(Func<T1, T> convert1, Func<T2, T> convert2)
+        {
+            switch (valueIndex)
+            {
+                case 0:
+                    if (convert1 == null) throw new InvalidOperationException();
+                    return convert1(value1);
+                case 1:
+                    if (convert2 == null) throw new InvalidOperationException();
+                    return convert2(value2);
+                default:
+                    throw new Exception();
+            }
+        }
+
+        /// <summary>戻り値のないパターンマッチを行います。</summary>
+        public void Action(Action<T1> action1, Action<T2> action2)
+        {
+            switch (valueIndex)
+            {
+                case 0:
+                    if (action1 == null) throw new InvalidOperationException();
+                    action1(value1);
+                    return;
+                case 1:
+                    if (action2 == null) throw new InvalidOperationException();
+                    action2(value2);
+                    return;
+                default:
+                    throw new Exception();
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Choice<T1, T2>);
+        }
+
+        public bool Equals(Choice<T1, T2> other)
+        {
+            return Equals(other, null, null);
+        }
+
+        public bool Equals(Choice<T1, T2> other, Func<T1, T1, bool> comparer1)
+        {
+            return Equals(other, comparer1, null);
+        }
+
+        public bool Equals(Choice<T1, T2> other, Func<T2, T2, bool> comparer2)
+        {
+            return Equals(other, null, comparer2);
+        }
+
+        public bool Equals(Choice<T1, T2> other, Func<T1, T1, bool> comparer1, Func<T2, T2, bool> comparer2)
+        {
+            if (other == null) return false;
+            if (this.valueIndex != other.valueIndex) return false;
+
+            switch (valueIndex)
+            {
+                case 0:
+                    if (comparer1 == null)
+                    {
+                        return Object.Equals(this.value1, other.value1);
+                    }
+                    else
+                    {
+                        return comparer1(this.value1, other.value1);
+                    }
+                case 1:
+                    if (comparer2 == null)
+                    {
+                        return Object.Equals(this.value2, other.value2);
+                    }
+                    else
+                    {
+                        return comparer2(this.value2, other.value2);
+                    }
+                default:
+                    throw new Exception();
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return Match(v => ObjectEx.GetHashCode(v), v => ObjectEx.GetHashCode(v));
+        }
+
+        public override string ToString()
+        {
+            return Match(v => ObjectEx.ToString(v), v => ObjectEx.ToString(v));
+        }
+    }
+
+    #endregion
 #endif
 
 #if NET45_WINRT45_WP8 || TESTS
