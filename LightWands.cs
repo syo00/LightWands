@@ -335,6 +335,14 @@ namespace Kirinji.LightWands
             foreach (var s in source) yield return s;
         }
 
+        public static IDictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> source)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Ensures(Contract.Result<IDictionary<TKey, TValue>>() != null);
+
+            return source.ToDictionary(pair => pair.Key, pair => pair.Value);
+        }
+
         /// <summary>
         /// 指定された条件に合致した、最後の要素のインデックスを返します。見つからなかった場合は null が返されます。
         /// </summary>
