@@ -1543,6 +1543,7 @@ namespace Kirinji.LightWands
     }
 
     #endregion
+
 #endif
 
 #if NET45_WINRT45_WP8 || TESTS
@@ -1560,33 +1561,26 @@ namespace Kirinji.LightWands
         }
 
         [DataContract]
-        class ReadOnlyArray<T> : IReadOnlyList<T>
+        class ReadOnlyArray<T> : IReadOnlyList<T>, IList<T>
         {
             [DataMember]
-            readonly T[] array;
+            readonly T[] coreArray;
 
             public ReadOnlyArray(T[] array)
             {
                 Contract.Requires<ArgumentNullException>(array != null);
                 
-                this.array = array;
-            }
-
-            [ContractInvariantMethod]
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
-            private void ObjectInvariant()
-            {
-                Contract.Invariant(array != null);
+                this.coreArray = array;
             }
 
             public int Count
             {
-                get { return array.Length; }
+                get { return coreArray == null ? 0 : coreArray.Length; }
             }
 
             public IEnumerator<T> GetEnumerator()
             {
-                return array.AsEnumerable().GetEnumerator();
+                return (coreArray ?? new T[0]).AsEnumerable().GetEnumerator();
             }
 
             IEnumerator IEnumerable.GetEnumerator()
@@ -1596,7 +1590,64 @@ namespace Kirinji.LightWands
 
             public T this[int index]
             {
-                get { return array[index]; }
+                get { return (coreArray ?? new T[0])[index]; /* 例外は丸投げ */ }
+            }
+
+            int IList<T>.IndexOf(T item)
+            {
+                return coreArray == null ? -1 : Array.IndexOf(coreArray, item);
+            }
+
+            void IList<T>.Insert(int index, T item)
+            {
+                throw new NotSupportedException();
+            }
+
+            void IList<T>.RemoveAt(int index)
+            {
+                throw new NotSupportedException();
+            }
+
+            T IList<T>.this[int index]
+            {
+                get
+                {
+                    return this[index];
+                }
+                set
+                {
+                    throw new NotSupportedException();
+                }
+            }
+
+            void ICollection<T>.Add(T item)
+            {
+                throw new NotSupportedException();
+            }
+
+            void ICollection<T>.Clear()
+            {
+                throw new NotSupportedException();
+            }
+
+            bool ICollection<T>.Contains(T item)
+            {
+                return coreArray == null ? false : coreArray.Any(elem => Object.Equals(elem, item));
+            }
+
+            void ICollection<T>.CopyTo(T[] array, int arrayIndex)
+            {
+                (coreArray ?? new T[0]).CopyTo(array, arrayIndex);
+            }
+
+            bool ICollection<T>.IsReadOnly
+            {
+                get { return true; }
+            }
+
+            bool ICollection<T>.Remove(T item)
+            {
+                throw new NotSupportedException();
             }
         }
     }
