@@ -58,7 +58,6 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Runtime.Serialization;
 #endif
 
 using System;
@@ -68,6 +67,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
 
@@ -1383,81 +1383,40 @@ namespace Kirinji.LightWands
     #region Choice
 
     /// <summary>F# の判別共用体を再現した機能を提供します。</summary>
-    #if USE_INTERNAL
+#if USE_INTERNAL
     internal
 #else
     public
 #endif
     sealed class Choice<T1, T2> : IEquatable<Choice<T1, T2>>
     {
-        readonly int valueIndex;
-        readonly T1 value1;
-        readonly T2 value2;
+        readonly ChoiceWithEmpty<T1, T2> coreChoice;
 
         public Choice(T1 value1)
         {
-            this.value1 = value1;
+            this.coreChoice = new ChoiceWithEmpty<T1, T2>(value1);
         }
 
         public Choice(T2 value2)
         {
-            this.value2 = value2;
-            this.valueIndex = 1;
+            this.coreChoice = new ChoiceWithEmpty<T1, T2>(value2);
         }
 
         [ContractInvariantMethod]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
         private void ObjectInvariant()
         {
-            Contract.Invariant(0 <= valueIndex && valueIndex <= 1);
+            Contract.Invariant(coreChoice != null);
         }
 
-        public static Choice<T1, T2> Create(T1 value1)
-        {
-            Contract.Ensures(Contract.Result<Choice<T1, T2>>() != null);
-
-            return new Choice<T1, T2>(value1);
-        }
-
-        public static Choice<T1, T2> Create(T2 value2)
-        {
-            Contract.Ensures(Contract.Result<Choice<T1, T2>>() != null);
-
-            return new Choice<T1, T2>(value2);
-        }
-
-        /// <summary>戻り値のあるパターンマッチを行います。</summary>
         public T Match<T>(Func<T1, T> convert1, Func<T2, T> convert2)
         {
-            switch (valueIndex)
-            {
-                case 0:
-                    if (convert1 == null) throw new InvalidOperationException();
-                    return convert1(value1);
-                case 1:
-                    if (convert2 == null) throw new InvalidOperationException();
-                    return convert2(value2);
-                default:
-                    throw new Exception();
-            }
+            return coreChoice.Match(convert1, convert2, null);
         }
 
-        /// <summary>戻り値のないパターンマッチを行います。</summary>
         public void Action(Action<T1> action1, Action<T2> action2)
         {
-            switch (valueIndex)
-            {
-                case 0:
-                    if (action1 == null) throw new InvalidOperationException();
-                    action1(value1);
-                    return;
-                case 1:
-                    if (action2 == null) throw new InvalidOperationException();
-                    action2(value2);
-                    return;
-                default:
-                    throw new Exception();
-            }
+            coreChoice.Action(action1, action2, null);
         }
 
         public override bool Equals(object obj)
@@ -1470,59 +1429,612 @@ namespace Kirinji.LightWands
             return Equals(other, null, null);
         }
 
-        public bool Equals(Choice<T1, T2> other, Func<T1, T1, bool> comparer1)
-        {
-            return Equals(other, comparer1, null);
-        }
-
-        public bool Equals(Choice<T1, T2> other, Func<T2, T2, bool> comparer2)
-        {
-            return Equals(other, null, comparer2);
-        }
-
         public bool Equals(Choice<T1, T2> other, Func<T1, T1, bool> comparer1, Func<T2, T2, bool> comparer2)
         {
             if (other == null) return false;
-            if (this.valueIndex != other.valueIndex) return false;
-
-            switch (valueIndex)
-            {
-                case 0:
-                    if (comparer1 == null)
-                    {
-                        return Object.Equals(this.value1, other.value1);
-                    }
-                    else
-                    {
-                        return comparer1(this.value1, other.value1);
-                    }
-                case 1:
-                    if (comparer2 == null)
-                    {
-                        return Object.Equals(this.value2, other.value2);
-                    }
-                    else
-                    {
-                        return comparer2(this.value2, other.value2);
-                    }
-                default:
-                    throw new Exception();
-            }
+            return coreChoice.Equals(other.coreChoice, comparer1, comparer2);
         }
 
         public override int GetHashCode()
         {
-            return Match(v => ObjectEx.GetHashCode(v), v => ObjectEx.GetHashCode(v));
+            return Match(ObjectEx.GetHashCode, ObjectEx.GetHashCode);
         }
 
         public override string ToString()
         {
-            return Match(v => ObjectEx.ToString(v), v => ObjectEx.ToString(v));
+            return Match(ObjectEx.ToString, ObjectEx.ToString);
+        }
+    }
+
+    /// <summary>F# の判別共用体を再現した機能を提供します。</summary>
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    sealed class Choice<T1, T2, T3> : IEquatable<Choice<T1, T2, T3>>
+    {
+        readonly ChoiceWithEmpty<T1, T2, T3> coreChoice;
+
+        public Choice(T1 value1)
+        {
+            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3>(value1);
+        }
+
+        public Choice(T2 value2)
+        {
+            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3>(value2);
+        }
+
+        public Choice(T3 value3)
+        {
+            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3>(value3);
+        }
+
+        [ContractInvariantMethod]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
+        private void ObjectInvariant()
+        {
+            Contract.Invariant(coreChoice != null);
+        }
+
+        public T Match<T>(Func<T1, T> convert1, Func<T2, T> convert2, Func<T3, T> convert3)
+        {
+            return coreChoice.Match(convert1, convert2, convert3, null);
+        }
+
+        public void Action(Action<T1> action1, Action<T2> action2, Action<T3> action3)
+        {
+            coreChoice.Action(action1, action2, action3, null);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Choice<T1, T2, T3>);
+        }
+
+        public bool Equals(Choice<T1, T2, T3> other)
+        {
+            return Equals(other, null, null, null);
+        }
+
+        public bool Equals(Choice<T1, T2, T3> other, Func<T1, T1, bool> comparer1, Func<T2, T2, bool> comparer2, Func<T3, T3, bool> comparer3)
+        {
+            if (other == null) return false;
+            return coreChoice.Equals(other.coreChoice, comparer1, comparer2, comparer3);
+        }
+
+        public override int GetHashCode()
+        {
+            return Match(ObjectEx.GetHashCode, ObjectEx.GetHashCode, ObjectEx.GetHashCode);
+        }
+
+        public override string ToString()
+        {
+            return Match(ObjectEx.ToString, ObjectEx.ToString, ObjectEx.ToString);
+        }
+    }
+
+    /// <summary>F# の判別共用体を再現した機能を提供します。</summary>
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    sealed class Choice<T1, T2, T3, T4> : IEquatable<Choice<T1, T2, T3, T4>>
+    {
+        readonly ChoiceWithEmpty<T1, T2, T3, T4> coreChoice;
+
+        public Choice(T1 value1)
+        {
+            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3, T4>(value1);
+        }
+
+        public Choice(T2 value2)
+        {
+            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3, T4>(value2);
+        }
+
+        public Choice(T3 value3)
+        {
+            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3, T4>(value3);
+        }
+
+        public Choice(T4 value4)
+        {
+            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3, T4>(value4);
+        }
+
+        [ContractInvariantMethod]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
+        private void ObjectInvariant()
+        {
+            Contract.Invariant(coreChoice != null);
+        }
+
+        public T Match<T>(Func<T1, T> convert1, Func<T2, T> convert2, Func<T3, T> convert3, Func<T4, T> convert4)
+        {
+            return coreChoice.Match(convert1, convert2, convert3, convert4, null);
+        }
+
+        public void Action(Action<T1> action1, Action<T2> action2, Action<T3> action3, Action<T4> action4)
+        {
+            coreChoice.Action(action1, action2, action3, action4, null);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Choice<T1, T2, T3, T4>);
+        }
+
+        public bool Equals(Choice<T1, T2, T3, T4> other)
+        {
+            return Equals(other, null, null, null, null);
+        }
+
+        public bool Equals(Choice<T1, T2, T3, T4> other, Func<T1, T1, bool> comparer1, Func<T2, T2, bool> comparer2, Func<T3, T3, bool> comparer3, Func<T4, T4, bool> comparer4)
+        {
+            if (other == null) return false;
+            return coreChoice.Equals(other.coreChoice, comparer1, comparer2, comparer3, comparer4);
+        }
+
+        public override int GetHashCode()
+        {
+            return Match(ObjectEx.GetHashCode, ObjectEx.GetHashCode, ObjectEx.GetHashCode, ObjectEx.GetHashCode);
+        }
+
+        public override string ToString()
+        {
+            return Match(ObjectEx.ToString, ObjectEx.ToString, ObjectEx.ToString, ObjectEx.ToString);
         }
     }
 
     #endregion
 
+
+    #region ChoiceWithEmpty
+
+    [DataContract]
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    sealed class ChoiceWithEmpty<T1, T2> : IEquatable<ChoiceWithEmpty<T1, T2>>
+    {
+        [DataMember]
+        readonly int? valueIndex;
+
+        [DataMember]
+        readonly T1 value1;
+
+        [DataMember]
+        readonly T2 value2;
+
+        /// <summary>空の値を示すインスタンスを作成します。</summary>
+        public ChoiceWithEmpty()
+        {
+
+        }
+
+        public ChoiceWithEmpty(T1 value1)
+        {
+            this.value1 = value1;
+            this.valueIndex = 0;
+        }
+
+        public ChoiceWithEmpty(T2 value2)
+        {
+            this.value2 = value2;
+            this.valueIndex = 1;
+        }
+
+        public T Match<T>(Func<T1, T> convert1, Func<T2, T> convert2, Func<T> convertEmpty)
+        {
+            switch (valueIndex)
+            {
+                case 0:
+                    if (convert1 == null) throw new InvalidOperationException();
+                    return convert1(value1);
+                case 1:
+                    if (convert2 == null) throw new InvalidOperationException();
+                    return convert2(value2);
+                default:
+                    if (convertEmpty == null) throw new InvalidOperationException();
+                    return convertEmpty();
+            }
+        }
+
+        public void Action(Action<T1> action1, Action<T2> action2, Action actionEmpty)
+        {
+            switch (valueIndex)
+            {
+                case 0:
+                    if (action1 == null) throw new InvalidOperationException();
+                    action1(value1);
+                    return;
+                case 1:
+                    if (action2 == null) throw new InvalidOperationException();
+                    action2(value2);
+                    return;
+                default:
+                    if (actionEmpty == null) throw new InvalidOperationException();
+                    actionEmpty();
+                    return;
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as ChoiceWithEmpty<T1, T2>);
+        }
+
+        public bool Equals(ChoiceWithEmpty<T1, T2> other)
+        {
+            return Equals(other, null, null);
+        }
+
+        public bool Equals(ChoiceWithEmpty<T1, T2> other, Func<T1, T1, bool> comparer1, Func<T2, T2, bool> comparer2)
+        {
+            if (other == null) return false;
+
+            if (this.valueIndex == 0)
+            {
+                if (other.valueIndex != 0) return false;
+                if (comparer1 == null)
+                {
+                    return Object.Equals(this.value1, other.value1);
+                }
+                else
+                {
+                    return comparer1(this.value1, other.value1);
+                }
+            }
+            if (this.valueIndex == 1)
+            {
+                if (other.valueIndex != 1) return false;
+                if (comparer2 == null)
+                {
+                    return Object.Equals(this.value2, other.value2);
+                }
+                else
+                {
+                    return comparer2(this.value2, other.value2);
+                }
+            }
+            return true;
+        }
+
+        public override int GetHashCode()
+        {
+            return Match(ObjectEx.GetHashCode, ObjectEx.GetHashCode, () => 0);
+        }
+
+        public override string ToString()
+        {
+            return Match(ObjectEx.ToString, ObjectEx.ToString, () => "Empty");
+        }
+    }
+
+    [DataContract]
+    public sealed class ChoiceWithEmpty<T1, T2, T3> : IEquatable<ChoiceWithEmpty<T1, T2, T3>>
+    {
+        [DataMember]
+        readonly int? valueIndex;
+
+        [DataMember]
+        readonly T1 value1;
+
+        [DataMember]
+        readonly T2 value2;
+
+        [DataMember]
+        readonly T3 value3;
+
+        /// <summary>空の値を示すインスタンスを作成します。</summary>
+        public ChoiceWithEmpty()
+        {
+
+        }
+
+        public ChoiceWithEmpty(T1 value1)
+        {
+            this.value1 = value1;
+            this.valueIndex = 0;
+        }
+
+        public ChoiceWithEmpty(T2 value2)
+        {
+            this.value2 = value2;
+            this.valueIndex = 1;
+        }
+
+        public ChoiceWithEmpty(T3 value3)
+        {
+            this.value3 = value3;
+            this.valueIndex = 2;
+        }
+
+        public T Match<T>(Func<T1, T> convert1, Func<T2, T> convert2, Func<T3, T> convert3, Func<T> convertEmpty)
+        {
+            switch (valueIndex)
+            {
+                case 0:
+                    if (convert1 == null) throw new InvalidOperationException();
+                    return convert1(value1);
+                case 1:
+                    if (convert2 == null) throw new InvalidOperationException();
+                    return convert2(value2);
+                case 2:
+                    if (convert3 == null) throw new InvalidOperationException();
+                    return convert3(value3);
+                default:
+                    if (convertEmpty == null) throw new InvalidOperationException();
+                    return convertEmpty();
+            }
+        }
+
+        public void Action(Action<T1> action1, Action<T2> action2, Action<T3> action3, Action actionEmpty)
+        {
+            switch (valueIndex)
+            {
+                case 0:
+                    if (action1 == null) throw new InvalidOperationException();
+                    action1(value1);
+                    return;
+                case 1:
+                    if (action2 == null) throw new InvalidOperationException();
+                    action2(value2);
+                    return;
+                case 2:
+                    if (action3 == null) throw new InvalidOperationException();
+                    action3(value3);
+                    return;
+                default:
+                    if (actionEmpty == null) throw new InvalidOperationException();
+                    actionEmpty();
+                    return;
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as ChoiceWithEmpty<T1, T2, T3>);
+        }
+
+        public bool Equals(ChoiceWithEmpty<T1, T2, T3> other)
+        {
+            return Equals(other, null, null, null);
+        }
+
+        public bool Equals(ChoiceWithEmpty<T1, T2, T3> other, Func<T1, T1, bool> comparer1, Func<T2, T2, bool> comparer2, Func<T3, T3, bool> comparer3)
+        {
+            if (other == null) return false;
+
+            if (this.valueIndex == 0)
+            {
+                if (other.valueIndex != 0) return false;
+                if (comparer1 == null)
+                {
+                    return Object.Equals(this.value1, other.value1);
+                }
+                else
+                {
+                    return comparer1(this.value1, other.value1);
+                }
+            }
+            if (this.valueIndex == 1)
+            {
+                if (other.valueIndex != 1) return false;
+                if (comparer2 == null)
+                {
+                    return Object.Equals(this.value2, other.value2);
+                }
+                else
+                {
+                    return comparer2(this.value2, other.value2);
+                }
+            }
+            if (this.valueIndex == 2)
+            {
+                if (other.valueIndex != 2) return false;
+                if (comparer3 == null)
+                {
+                    return Object.Equals(this.value3, other.value3);
+                }
+                else
+                {
+                    return comparer3(this.value3, other.value3);
+                }
+            }
+            return true;
+        }
+
+        public override int GetHashCode()
+        {
+            return Match(ObjectEx.GetHashCode, ObjectEx.GetHashCode, ObjectEx.GetHashCode, () => 0);
+        }
+
+        public override string ToString()
+        {
+            return Match(ObjectEx.ToString, ObjectEx.ToString, ObjectEx.ToString, () => "Empty");
+        }
+    }
+
+    [DataContract]
+    public sealed class ChoiceWithEmpty<T1, T2, T3, T4> : IEquatable<ChoiceWithEmpty<T1, T2, T3, T4>>
+    {
+        [DataMember]
+        readonly int? valueIndex;
+
+        [DataMember]
+        readonly T1 value1;
+
+        [DataMember]
+        readonly T2 value2;
+
+        [DataMember]
+        readonly T3 value3;
+
+        [DataMember]
+        readonly T4 value4;
+
+        /// <summary>空の値を示すインスタンスを作成します。</summary>
+        public ChoiceWithEmpty()
+        {
+
+        }
+
+        public ChoiceWithEmpty(T1 value1)
+        {
+            this.value1 = value1;
+            this.valueIndex = 0;
+        }
+
+        public ChoiceWithEmpty(T2 value2)
+        {
+            this.value2 = value2;
+            this.valueIndex = 1;
+        }
+
+        public ChoiceWithEmpty(T3 value3)
+        {
+            this.value3 = value3;
+            this.valueIndex = 2;
+        }
+
+        public ChoiceWithEmpty(T4 value4)
+        {
+            this.value4 = value4;
+            this.valueIndex = 3;
+        }
+
+        public T Match<T>(Func<T1, T> convert1, Func<T2, T> convert2, Func<T3, T> convert3, Func<T4, T> convert4, Func<T> convertEmpty)
+        {
+            switch (valueIndex)
+            {
+                case 0:
+                    if (convert1 == null) throw new InvalidOperationException();
+                    return convert1(value1);
+                case 1:
+                    if (convert2 == null) throw new InvalidOperationException();
+                    return convert2(value2);
+                case 2:
+                    if (convert3 == null) throw new InvalidOperationException();
+                    return convert3(value3);
+                case 3:
+                    if (convert4 == null) throw new InvalidOperationException();
+                    return convert4(value4);
+                default:
+                    if (convertEmpty == null) throw new InvalidOperationException();
+                    return convertEmpty();
+            }
+        }
+
+        public void Action(Action<T1> action1, Action<T2> action2, Action<T3> action3, Action<T4> action4, Action actionEmpty)
+        {
+            switch (valueIndex)
+            {
+                case 0:
+                    if (action1 == null) throw new InvalidOperationException();
+                    action1(value1);
+                    return;
+                case 1:
+                    if (action2 == null) throw new InvalidOperationException();
+                    action2(value2);
+                    return;
+                case 2:
+                    if (action3 == null) throw new InvalidOperationException();
+                    action3(value3);
+                    return;
+                case 3:
+                    if (action4 == null) throw new InvalidOperationException();
+                    action4(value4);
+                    return;
+                default:
+                    if (actionEmpty == null) throw new InvalidOperationException();
+                    actionEmpty();
+                    return;
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as ChoiceWithEmpty<T1, T2, T3, T4>);
+        }
+
+        public bool Equals(ChoiceWithEmpty<T1, T2, T3, T4> other)
+        {
+            return Equals(other, null, null, null, null);
+        }
+
+        public bool Equals(ChoiceWithEmpty<T1, T2, T3, T4> other, Func<T1, T1, bool> comparer1, Func<T2, T2, bool> comparer2, Func<T3, T3, bool> comparer3, Func<T4, T4, bool> comparer4)
+        {
+            if (other == null) return false;
+
+            if (this.valueIndex == 0)
+            {
+                if (other.valueIndex != 0) return false;
+                if (comparer1 == null)
+                {
+                    return Object.Equals(this.value1, other.value1);
+                }
+                else
+                {
+                    return comparer1(this.value1, other.value1);
+                }
+            }
+            if (this.valueIndex == 1)
+            {
+                if (other.valueIndex != 1) return false;
+                if (comparer2 == null)
+                {
+                    return Object.Equals(this.value2, other.value2);
+                }
+                else
+                {
+                    return comparer2(this.value2, other.value2);
+                }
+            }
+            if (this.valueIndex == 2)
+            {
+                if (other.valueIndex != 2) return false;
+                if (comparer3 == null)
+                {
+                    return Object.Equals(this.value3, other.value3);
+                }
+                else
+                {
+                    return comparer3(this.value3, other.value3);
+                }
+            }
+            if (this.valueIndex == 3)
+            {
+                if (other.valueIndex != 3) return false;
+                if (comparer4 == null)
+                {
+                    return Object.Equals(this.value4, other.value4);
+                }
+                else
+                {
+                    return comparer4(this.value4, other.value4);
+                }
+            }
+            return true;
+        }
+
+        public override int GetHashCode()
+        {
+            return Match(ObjectEx.GetHashCode, ObjectEx.GetHashCode, ObjectEx.GetHashCode, ObjectEx.GetHashCode, () => 0);
+        }
+
+        public override string ToString()
+        {
+            return Match(ObjectEx.ToString, ObjectEx.ToString, ObjectEx.ToString, ObjectEx.ToString, () => "Empty");
+        }
+    }
+
+    #endregion
 
 #endif
 
