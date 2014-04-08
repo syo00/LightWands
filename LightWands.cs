@@ -261,20 +261,10 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(action != null);
 
-            source.ForEach((t, i, c) => action(t, i));
-        }
-
-        public static void ForEach<T>(this IEnumerable<T> source, Action<T, int, ICancellable> action)
-        {
-            Contract.Requires<ArgumentNullException>(source != null);
-            Contract.Requires<ArgumentNullException>(action != null);
-
             int index = 0;
-            var cancellable = new Cancellable();
             foreach (var item in source)
             {
-                action(item, index, cancellable);
-                if (cancellable.IsStopped) return;
+                action(item, index);
                 index++;
             }
         }
@@ -295,37 +285,12 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(actionAsync != null);
 
-            await source.ForEachAsync((item, i, c) => actionAsync(item, i));
-        }
-
-        public static async Task ForEachAsync<T>(this IEnumerable<T> source, Func<T, int, ICancellable, Task> actionAsync)
-        {
-            Contract.Requires<ArgumentNullException>(source != null);
-            Contract.Requires<ArgumentNullException>(actionAsync != null);
-
             int index = 0;
-            var cancellable = new Cancellable();
             foreach (var item in source)
             {
-                await actionAsync(item, index, cancellable);
-                if (cancellable.IsStopped) return;
+                await actionAsync(item, index);
                 index++;
             }
-        }
-
-        public interface ICancellable
-        {
-            void Cancel();
-        }
-
-        class Cancellable : ICancellable
-        {
-            public void Cancel()
-            {
-                IsStopped = true;
-            }
-
-            public bool IsStopped { get; private set; }
         }
 
         public static IEnumerable<T> Hide<T>(this IEnumerable<T> source)

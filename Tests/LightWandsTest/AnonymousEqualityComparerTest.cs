@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kirinji.LightWands;
 
-namespace KIRINJI.Toolkit.Test
+namespace Kirinji.Toolkit.Test
 {
     [TestClass]
     public class AnonymousEqualityComparerTest : ReactiveTest
