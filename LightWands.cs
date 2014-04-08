@@ -1396,6 +1396,20 @@ namespace Kirinji.LightWands
             if (value == null) return nullString;
             return value.ToString();
         }
+
+        /// <summary>Null-safe method for GetType. If value is null, returns typeof(T).</summary>
+        public static Type GetType<T>(T value)
+        {
+            Contract.Ensures(Contract.Result<Type>() != null);
+
+            return value == null ? typeof(T) : value.GetType();
+        }
+
+        /// <summary>Null-safe method for GetType. If value is null, returns null.</summary>
+        public static Type GetTypeOrDefault<T>(T value)
+        {
+            return value == null ? null : value.GetType();
+        }
     }
 
     #endregion
@@ -1543,6 +1557,7 @@ namespace Kirinji.LightWands
     }
 
     #endregion
+
 
 #endif
 
@@ -2587,6 +2602,27 @@ namespace Kirinji.LightWands
             Contract.Ensures(Contract.Result<IReadOnlyCollection<T>>() != null);
 
             return new ReadOnlyCollection<T>(source);
+        }
+    }
+
+    #endregion
+
+
+    #region TaskEx
+
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+ static class TaskEx
+    {
+        /// <summary>Obtains an empty Task object.</summary>
+        public static Task Empty()
+        {
+            Contract.Ensures(Contract.Result<Task>() != null);
+
+            return Task.FromResult(0);
         }
     }
 
