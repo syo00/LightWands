@@ -2572,31 +2572,37 @@ namespace Kirinji.LightWands
             return selector.Selector(parameter);
         }
 
-        public static IObservable<ValueOrError<T>> TakeError<T>(this IObservable<T> source)
+        public static IObservable<IValueOrError<T>> TakeError<T>(this IObservable<T> source)
         {
             Contract.Requires<ArgumentNullException>(source != null);
-            Contract.Ensures(Contract.Result<IObservable<ValueOrError<T>>>() != null);
+            Contract.Ensures(Contract.Result<IObservable<IValueOrError<T>>>() != null);
 
             return source
                 .TakeError()
-                .Select(x => x.IsError ? new ValueOrError<T>(x.Value) : new ValueOrError<T>(x.Error));
+                .Select(x => x.IsError ? ValueOrError.CreateValue(x.Value) : ValueOrError.CreateError<T>(x.Error));
         }
 
-        public static IObservable<ValueOrError<TValue, TException>> TakeError<TValue, TException>(this IObservable<TValue> source) where TException : Exception
+        public static IObservable<IValueOrError<TValue, TException>> TakeError<TValue, TException>(this IObservable<TValue> source) where TException : Exception
         {
             Contract.Requires<ArgumentNullException>(source != null);
-            Contract.Ensures(Contract.Result<IObservable<ValueOrError<TValue, TException>>>() != null);
-
-            var f = Observable.Merge(Observable.Throw<ValueOrError<TValue, TException>>(new Exception()), Observable.Empty<ValueOrError<TValue, TException>>());
+            Contract.Ensures(Contract.Result<IObservable<IValueOrError<TValue, TException>>>() != null);
 
             var value = source
-                .Select(v => new ValueOrError<TValue, TException>(v)) // Catch では射影できないので、まずここで通常の値を変換
-                .Catch((TException ex) => Observable.Return(new ValueOrError<TValue, TException>(ex))); // そしてここでエラーを変換
+                .Select(v => ValueOrError.CreateValue<TValue, TException>(v)) // Catch では射影できないので、まずここで通常の値を変換
+                .Catch((TException ex) => Observable.Return(ValueOrError.CreateError<TValue, TException>(ex))); // そしてここでエラーを変換
             Contract.Assert(value != null);
             return value;
         }
 
-        public static IObservable<TValue> ExtractError<TValue, TException>(this IObservable<ValueOrError<TValue, TException>> source) where TException : Exception
+        public static IObservable<T> ExtractError<T>(this IObservable<IValueOrError<T>> source)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+
+            return source.Cast<IValueOrError<T, Exception>>().ExtractError();
+        }
+
+        public static IObservable<TValue> ExtractError<TValue, TException>(this IObservable<IValueOrError<TValue, TException>> source) where TException : Exception
         {
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IObservable<TValue>>() != null);
@@ -2616,8 +2622,8 @@ namespace Kirinji.LightWands
                             observer.OnNext(x.Value);
                         }
                     },
-                        observer.OnError,
-                        observer.OnCompleted);
+                    observer.OnError,
+                    observer.OnCompleted);
                 return s;
             });
             Contract.Assert(value != null);
@@ -2740,12 +2746,92 @@ namespace Kirinji.LightWands
 
     #region ValueOrError
 
+    [ContractClass(typeof(IValueOrErrorContract<,>))]
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-    class ValueOrError<TValue, TException> : IEquatable<ValueOrError<TValue, TException>> where TException : Exception
+    interface IValueOrError<out TValue, out TException> where TException : Exception
+    {
+        bool IsError { get; }
+        TValue Value { get; }
+        TException Error { get; }
+    }
+
+    [ContractClassFor(typeof(IValueOrError<,>))]
+    abstract class IValueOrErrorContract<TValue, TException> : IValueOrError<TValue, TException> where TException : Exception
+    {
+        public bool IsError
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public TValue Value
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public TException Error
+        {
+            get
+            {
+                Contract.Ensures(!IsError || Contract.Result<TException>() != null);
+                
+                throw new NotImplementedException();
+            }
+        }
+    }
+
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    interface IValueOrError<out T> : IValueOrError<T, Exception>
+    {
+
+    }
+
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    static class ValueOrError
+    {
+        public static IValueOrError<T> CreateValue<T>(T value)
+        {
+            Contract.Ensures(Contract.Result<IValueOrError<T>>() != null);
+
+            return new ValueOrError<T>(value);
+        }
+
+        public static IValueOrError<T, TException> CreateValue<T, TException>(T value) where TException : Exception
+        {
+            Contract.Ensures(Contract.Result<IValueOrError<T, TException>>() != null);
+
+            return new ValueOrError<T, TException>(value);
+        }
+
+        public static IValueOrError<T> CreateError<T>(Exception error)
+        {
+            Contract.Requires<ArgumentNullException>(error != null);
+            Contract.Ensures(Contract.Result<IValueOrError<T>>() != null);
+
+            return new ValueOrError<T>(error);
+        }
+
+        public static IValueOrError<T, TException> CreateError<T, TException>(TException error) where TException : Exception
+        {
+            Contract.Requires<ArgumentNullException>(error != null);
+            Contract.Ensures(Contract.Result<IValueOrError<T, TException>>() != null);
+
+            return new ValueOrError<T, TException>(error);
+        }
+    }
+
+    class ValueOrError<TValue, TException> : IValueOrError<TValue, TException>, IEquatable<ValueOrError<TValue, TException>> where TException : Exception
     {
         public ValueOrError(TValue value)
         {
@@ -2815,12 +2901,7 @@ namespace Kirinji.LightWands
         }
     }
 
-#if USE_INTERNAL
-    internal
-#else
-    public
-#endif
-    class ValueOrError<T> : ValueOrError<T, Exception>, IEquatable<ValueOrError<T>>
+    class ValueOrError<T> : ValueOrError<T, Exception>, IValueOrError<T>, IEquatable<ValueOrError<T>>
     {
         public ValueOrError(T value)
             : base(value)
