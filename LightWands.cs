@@ -58,6 +58,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
 #endif
 
 using System;
@@ -2502,53 +2503,6 @@ namespace Kirinji.LightWands
             return value;
         }
 
-        public class SelectorResult<T>
-        {
-            public static SelectorResult<T> OnNext(T value, IObservable<T> source, int sourceIndex)
-            {
-                Contract.Requires<ArgumentNullException>(source != null);
-                Contract.Ensures(Contract.Result<SelectorResult<T>>() != null);
-
-                var r = new SelectorResult<T>();
-                r.Kind = NotificationKind.OnNext;
-                r.Value = value;
-                r.Source = source;
-                r.SourceIndex = sourceIndex;
-                return r;
-            }
-
-            public static SelectorResult<T> OnError(Exception exception, IObservable<T> source, int sourceIndex)
-            {
-                Contract.Requires<ArgumentNullException>(source != null);
-                Contract.Ensures(Contract.Result<SelectorResult<T>>() != null);
-
-                var r = new SelectorResult<T>();
-                r.Kind = NotificationKind.OnError;
-                r.Exception = exception;
-                r.Source = source;
-                r.SourceIndex = sourceIndex;
-                return r;
-            }
-
-            public static SelectorResult<T> OnCompleted(IObservable<T> source, int sourceIndex)
-            {
-                Contract.Requires<ArgumentNullException>(source != null);
-                Contract.Ensures(Contract.Result<SelectorResult<T>>() != null);
-
-                var r = new SelectorResult<T>();
-                r.Kind = NotificationKind.OnCompleted;
-                r.Source = source;
-                r.SourceIndex = sourceIndex;
-                return r;
-            }
-
-            public T Value { get; private set; }
-            public Exception Exception { get; private set; }
-            public NotificationKind Kind { get; private set; }
-            public IObservable<T> Source { get; private set; }
-            public int SourceIndex { get; private set; }
-        }
-
         /// <summary>Switches multiple sequences.</summary>
         /// <remarks>sources should implements IList&gt;T&lt;.</remarks>
         public static IObservable<SelectorResult<T>> Selector<T>(this IObservable<IEnumerable<int>> selector, IEnumerable<IObservable<T>> sources)
@@ -2618,60 +2572,14 @@ namespace Kirinji.LightWands
             return selector.Selector(parameter);
         }
 
-        public sealed class ValueOrError<TValue, TException> : IEquatable<ValueOrError<TValue, TException>> where TException : Exception
+        public static IObservable<ValueOrError<T>> TakeError<T>(this IObservable<T> source)
         {
-            public ValueOrError(TValue value)
-            {
-                this.Value = value;
-            }
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Ensures(Contract.Result<IObservable<ValueOrError<T>>>() != null);
 
-            public ValueOrError(TException error)
-            {
-                Contract.Requires<ArgumentNullException>(error != null);
-
-                this.IsError = true;
-                this.Error = error;
-            }
-
-            public bool IsError { get; private set; }
-            public TValue Value { get; private set; }
-            public TException Error { get; private set; }
-
-            public override bool Equals(object obj)
-            {
-                if (obj == null) return false;
-                var casted = obj as ValueOrError<TValue, TException>;
-                return Equals(casted);
-            }
-
-            public override int GetHashCode()
-            {
-                if (this.IsError)
-                {
-                    return this.Error.GetHashCode();
-                }
-                else
-                {
-                    return this.Value == null ? 0 : this.Value.GetHashCode();
-                }
-            }
-
-            public bool Equals(ValueOrError<TValue, TException> other)
-            {
-                if (other == null) return false;
-                if (this.IsError && other.IsError)
-                {
-                    return Object.Equals(this.Error, other.Error);
-                }
-                else if (!this.IsError && !other.IsError)
-                {
-                    return Object.Equals(this.Value, other.Value);
-                }
-                else
-                {
-                    return false;
-                }
-            }
+            return source
+                .TakeError()
+                .Select(x => x.IsError ? new ValueOrError<T>(x.Value) : new ValueOrError<T>(x.Error));
         }
 
         public static IObservable<ValueOrError<TValue, TException>> TakeError<TValue, TException>(this IObservable<TValue> source) where TException : Exception
@@ -2726,6 +2634,209 @@ namespace Kirinji.LightWands
 #else
             return source;
 #endif
+        }
+
+        public static IObservable<T> UseObserver<T>(this IObservable<T> source, Action<T, int, IObserver<T>> onNextSelector, Action<Exception, IObserver<T>> onErrorSelector, Action<IObserver<T>> onCompletedSelector)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+
+            Action<T, int, IObserver<T>> actualOnNextSelector = onNextSelector ?? ((x, i, observer) => observer.OnNext(x));
+            Action<Exception, IObserver<T>> actualOnErrorSelector = onErrorSelector ?? ((error, observer) => observer.OnError(error));
+            Action<IObserver<T>> actualOnCompletedSelector = onCompletedSelector ?? ((observer) => observer.OnCompleted());
+
+            int itemsCount = 0;
+            return Observable.Create<T>(observer =>
+            {
+                return source.Subscribe(x =>
+                {
+                    actualOnNextSelector(x, itemsCount, observer);
+                    Interlocked.Increment(ref itemsCount);
+                },
+                    ex => actualOnErrorSelector(ex, observer),
+                    () => actualOnCompletedSelector(observer));
+            });
+        }
+
+        public static IObservable<T> UseObserver<T>(this IObservable<T> source, Action<T, int, IObserver<T>> onNextSelector)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+
+            return source
+                .UseObserver(onNextSelector, null, null);
+        }
+
+        public static IObservable<T> UseObserver<T>(this IObservable<T> source, Action<T, IObserver<T>> onNextSelector)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Requires<ArgumentNullException>(onNextSelector != null);
+            Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+
+            return source
+                .UseObserver((x, i, observer) => onNextSelector(x, observer), null, null);
+        }
+    }
+
+    #endregion
+
+
+    #region SelectorResult
+
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    class SelectorResult<T>
+    {
+        public static SelectorResult<T> OnNext(T value, IObservable<T> source, int sourceIndex)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Ensures(Contract.Result<SelectorResult<T>>() != null);
+
+            var r = new SelectorResult<T>();
+            r.Kind = NotificationKind.OnNext;
+            r.Value = value;
+            r.Source = source;
+            r.SourceIndex = sourceIndex;
+            return r;
+        }
+
+        public static SelectorResult<T> OnError(Exception exception, IObservable<T> source, int sourceIndex)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Ensures(Contract.Result<SelectorResult<T>>() != null);
+
+            var r = new SelectorResult<T>();
+            r.Kind = NotificationKind.OnError;
+            r.Exception = exception;
+            r.Source = source;
+            r.SourceIndex = sourceIndex;
+            return r;
+        }
+
+        public static SelectorResult<T> OnCompleted(IObservable<T> source, int sourceIndex)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Ensures(Contract.Result<SelectorResult<T>>() != null);
+
+            var r = new SelectorResult<T>();
+            r.Kind = NotificationKind.OnCompleted;
+            r.Source = source;
+            r.SourceIndex = sourceIndex;
+            return r;
+        }
+
+        public T Value { get; private set; }
+        public Exception Exception { get; private set; }
+        public NotificationKind Kind { get; private set; }
+        public IObservable<T> Source { get; private set; }
+        public int SourceIndex { get; private set; }
+    }
+
+    #endregion
+
+
+    #region ValueOrError
+
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    class ValueOrError<TValue, TException> : IEquatable<ValueOrError<TValue, TException>> where TException : Exception
+    {
+        public ValueOrError(TValue value)
+        {
+            this.Value = value;
+        }
+
+        public ValueOrError(TException error)
+        {
+            Contract.Requires<ArgumentNullException>(error != null);
+
+            this.IsError = true;
+            this.Error = error;
+        }
+
+        public bool IsError { get; private set; }
+        public TValue Value { get; private set; }
+        public TException Error { get; private set; }
+
+        public Choice<TValue, TException> ToChoice()
+        {
+            Contract.Ensures(Contract.Result<Choice<TValue, TException>>() != null);
+
+            if (IsError)
+            {
+                return new Choice<TValue, TException>(Error);
+            }
+            else
+            {
+                return new Choice<TValue, TException>(Value);
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            var casted = obj as ValueOrError<TValue, TException>;
+            return Equals(casted);
+        }
+
+        public override int GetHashCode()
+        {
+            if (this.IsError)
+            {
+                return this.Error.GetHashCode();
+            }
+            else
+            {
+                return this.Value == null ? 0 : this.Value.GetHashCode();
+            }
+        }
+
+        public bool Equals(ValueOrError<TValue, TException> other)
+        {
+            if (other == null) return false;
+            if (this.IsError && other.IsError)
+            {
+                return Object.Equals(this.Error, other.Error);
+            }
+            else if (!this.IsError && !other.IsError)
+            {
+                return Object.Equals(this.Value, other.Value);
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    class ValueOrError<T> : ValueOrError<T, Exception>, IEquatable<ValueOrError<T>>
+    {
+        public ValueOrError(T value)
+            : base(value)
+        {
+            
+        }
+
+        public ValueOrError(Exception error)
+            : base(error)
+        {
+            Contract.Requires<ArgumentNullException>(error != null);
+        }
+
+        public bool Equals(ValueOrError<T> other)
+        {
+            return Equals((ValueOrError<T, Exception>)other);
         }
     }
 
