@@ -2931,7 +2931,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-        class CashedReplaySubject<T> : ISubject<T>
+    class CashedReplaySubject<T> : ISubject<T>, IDisposable
     {
         IList<Tuple<ItemType, T, Exception>> m_cache;
         IScheduler m_scheduler;
@@ -2959,6 +2959,8 @@ namespace Kirinji.LightWands
 
         public void OnCompleted()
         {
+            ThrowExceptionIfDisposed();
+
             if (!this.m_isCompleted)
             {
                 this.m_isCompleted = true;
@@ -2969,6 +2971,8 @@ namespace Kirinji.LightWands
 
         public void OnError(Exception error)
         {
+            ThrowExceptionIfDisposed();
+
             if (!this.m_isCompleted)
             {
                 this.m_source.OnError(error);
@@ -2978,6 +2982,8 @@ namespace Kirinji.LightWands
 
         public void OnNext(T value)
         {
+            ThrowExceptionIfDisposed();
+
             if (!this.m_isCompleted)
             {
                 this.m_source.OnNext(value);
@@ -2987,11 +2993,15 @@ namespace Kirinji.LightWands
 
         public IDisposable Subscribe(IObserver<T> observer)
         {
+            ThrowExceptionIfDisposed();
+
             return Observable.Merge(this.ReplayCache(), this.m_source).Subscribe(observer);
         }
 
         public IObservable<T> ReplayCache()
         {
+            ThrowExceptionIfDisposed();
+
             ReplaySubject<T> returnSubject;
             if (this.m_scheduler != null)
             {
@@ -3021,6 +3031,57 @@ namespace Kirinji.LightWands
         {
             OnNextValue = 0,
             OnErrorValue = 1,
+        }
+
+        #region IDispose implementation
+        private bool IsDisposed
+        {
+            get;
+            set;
+        }
+
+        private void ThrowExceptionIfDisposed()
+        {
+            lock (this)
+            {
+                if (IsDisposed)
+                {
+                    throw new ObjectDisposedException(GetType().FullName + " has been already disposed.");
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool isDisposing)
+        {
+            lock (this)
+            {
+                if (IsDisposed) return;
+                if (isDisposing) OnDisposingUnManagedResources();
+                OnDisposingManagedResources();
+                IsDisposed = true;
+            }
+        }
+
+        protected virtual void OnDisposingManagedResources()
+        {
+            m_source.Dispose();
+        }
+
+        protected virtual void OnDisposingUnManagedResources()
+        {
+
+        }
+        #endregion
+
+        ~CashedReplaySubject()
+        {
+            Dispose(false);
         }
     }
 
