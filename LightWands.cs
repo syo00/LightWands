@@ -3095,7 +3095,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-        class ObservableDictionary<TKey, TValue> : IDictionary<TKey, TValue>
+        class ObservableDictionary<TKey, TValue> : IDictionary<TKey, TValue>, INotifyCollectionChanged
     {
         private readonly ObservableCollection<TKey> keys = new ObservableCollection<TKey>();
         private readonly ObservableCollection<TValue> values = new ObservableCollection<TValue>();
@@ -3290,6 +3290,18 @@ namespace Kirinji.LightWands
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        public event NotifyCollectionChangedEventHandler CollectionChanged
+        {
+            add
+            {
+                keyValuePairs.CollectionChanged += value;
+            }
+            remove
+            {
+                keyValuePairs.CollectionChanged -= value;
+            }
         }
     }
 
