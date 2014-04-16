@@ -2578,8 +2578,8 @@ namespace Kirinji.LightWands
             Contract.Ensures(Contract.Result<IObservable<IValueOrError<T>>>() != null);
 
             return source
-                .TakeError()
-                .Select(x => x.IsError ? ValueOrError.CreateValue(x.Value) : ValueOrError.CreateError<T>(x.Error));
+                .TakeError<T, Exception>()
+                .Select(x => !x.IsError ? ValueOrError.CreateValue(x.Value) : ValueOrError.CreateError<T>(x.Error));
         }
 
         public static IObservable<IValueOrError<TValue, TException>> TakeError<TValue, TException>(this IObservable<TValue> source) where TException : Exception

@@ -70,6 +70,7 @@
     <Compile Include="ChainingAssertion.MSTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="EnumerableExtensionsTest.cs" />
+    <Compile Include="ObservableExtensionsTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
