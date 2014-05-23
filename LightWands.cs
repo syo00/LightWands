@@ -533,6 +533,7 @@ namespace Kirinji.LightWands
             foreach (var e in source)
             {
                 yield return new KeyValuePair<int, T>(count, e);
+                count++;
             }
         }
 
