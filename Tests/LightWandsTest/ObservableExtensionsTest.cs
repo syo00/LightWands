@@ -17,7 +17,7 @@ namespace LightWandsTest
             var result = new List<Tuple<int, string>>();
             subject
                 .Select(x => new Tuple<int, string>(0, x))
-                .UseObserver((value, i, observer) =>
+                .UseObserver((observer, value, i) =>
                 {
                     observer.OnNext(new Tuple<int, string>(i, value.Item2));
                 },
@@ -44,7 +44,7 @@ namespace LightWandsTest
             var subject = new Subject<string>();
             var result = new List<string>();
             subject
-                .UseObserver((value, i, observer) =>
+                .UseObserver((observer, value, i) =>
                 {
                     observer.OnNext(value);
                 },

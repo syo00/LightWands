@@ -2552,12 +2552,12 @@ namespace Kirinji.LightWands
 #endif
         }
 
-        public static IObservable<T> UseObserver<T>(this IObservable<T> source, Action<T, int, IObserver<T>> onNextSelector, Action<Exception, IObserver<T>> onErrorSelector, Action<IObserver<T>> onCompletedSelector)
+        public static IObservable<T> UseObserver<T>(this IObservable<T> source, Action<IObserver<T>, T, int> onNextSelector, Action<Exception, IObserver<T>> onErrorSelector, Action<IObserver<T>> onCompletedSelector)
         {
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
 
-            Action<T, int, IObserver<T>> actualOnNextSelector = onNextSelector ?? ((x, i, observer) => observer.OnNext(x));
+            Action<IObserver<T>, T, int> actualOnNextSelector = onNextSelector ?? ((observer, x, i) => observer.OnNext(x));
             Action<Exception, IObserver<T>> actualOnErrorSelector = onErrorSelector ?? ((error, observer) => observer.OnError(error));
             Action<IObserver<T>> actualOnCompletedSelector = onCompletedSelector ?? ((observer) => observer.OnCompleted());
 
@@ -2566,7 +2566,7 @@ namespace Kirinji.LightWands
             {
                 return source.Subscribe(x =>
                 {
-                    actualOnNextSelector(x, itemsCount, observer);
+                    actualOnNextSelector(observer, x, itemsCount);
                     Interlocked.Increment(ref itemsCount);
                 },
                     ex => actualOnErrorSelector(ex, observer),
@@ -2574,7 +2574,7 @@ namespace Kirinji.LightWands
             });
         }
 
-        public static IObservable<T> UseObserver<T>(this IObservable<T> source, Action<T, int, IObserver<T>> onNextSelector)
+        public static IObservable<T> UseObserver<T>(this IObservable<T> source, Action<IObserver<T>, T, int> onNextSelector)
         {
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
@@ -2583,14 +2583,14 @@ namespace Kirinji.LightWands
                 .UseObserver(onNextSelector, null, null);
         }
 
-        public static IObservable<T> UseObserver<T>(this IObservable<T> source, Action<T, IObserver<T>> onNextSelector)
+        public static IObservable<T> UseObserver<T>(this IObservable<T> source, Action<IObserver<T>, T> onNextSelector)
         {
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(onNextSelector != null);
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
 
             return source
-                .UseObserver((x, i, observer) => onNextSelector(x, observer), null, null);
+                .UseObserver((observer, x, i) => onNextSelector(observer, x), null, null);
         }
     }
 
