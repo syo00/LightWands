@@ -20,12 +20,12 @@
 // VERSION: 0.7.1
 
 
-/***** public or internal ******/
+/***** public or internal *****/
 // NOTE: uncomment the following line to make LightWands class internal.
 //#define USE_INTERNAL
 
 
-/***** targeting projects ******/
+/***** targeting projects *****/
 // NOTE: select one number from (1), (2), or (3) by your project and uncomment its corresponding #define. You do not have to uncomment more than two #define lines in (1) to (3).
 
 // (1) If you want to apply for below projects, uncomment #define TESTS and add reference to System.Runtime.Serialization.
@@ -44,6 +44,11 @@
 //     * Windows store application
 //     * Windows Phone 8
 //#define NET40_SL5_WINRT45_WP8
+
+
+/***** add implicit operators to Choice and ChoiceWithEmpty *****/
+// NOTE: uncomment the following line to add implicit conversion operators to Choice and ChoiceWithEmpty class.
+//#define USE_CHOICE_IMPLICIT
 
 
 
@@ -1446,6 +1451,11 @@ namespace Kirinji.LightWands
         {
             return Match(ObjectEx.ToString, ObjectEx.ToString);
         }
+
+#if USE_CHOICE_IMPLICIT
+        public static implicit operator Choice<T1, T2>(T1 value) { return new Choice<T1, T2>(value); }
+        public static implicit operator Choice<T1, T2>(T2 value) { return new Choice<T1, T2>(value); }
+#endif
     }
 
     /// <summary>F# の判別共用体を再現した機能を提供します。</summary>
@@ -1515,6 +1525,12 @@ namespace Kirinji.LightWands
         {
             return Match(ObjectEx.ToString, ObjectEx.ToString, ObjectEx.ToString);
         }
+
+#if USE_CHOICE_IMPLICIT
+        public static implicit operator Choice<T1, T2, T3>(T1 value) { return new Choice<T1, T2, T3>(value); }
+        public static implicit operator Choice<T1, T2, T3>(T2 value) { return new Choice<T1, T2, T3>(value); }
+        public static implicit operator Choice<T1, T2, T3>(T3 value) { return new Choice<T1, T2, T3>(value); }
+#endif
     }
 
     /// <summary>F# の判別共用体を再現した機能を提供します。</summary>
@@ -1589,6 +1605,13 @@ namespace Kirinji.LightWands
         {
             return Match(ObjectEx.ToString, ObjectEx.ToString, ObjectEx.ToString, ObjectEx.ToString);
         }
+
+#if USE_CHOICE_IMPLICIT
+        public static implicit operator Choice<T1, T2, T3, T4>(T1 value) { return new Choice<T1, T2, T3, T4>(value); }
+        public static implicit operator Choice<T1, T2, T3, T4>(T2 value) { return new Choice<T1, T2, T3, T4>(value); }
+        public static implicit operator Choice<T1, T2, T3, T4>(T3 value) { return new Choice<T1, T2, T3, T4>(value); }
+        public static implicit operator Choice<T1, T2, T3, T4>(T4 value) { return new Choice<T1, T2, T3, T4>(value); }
+#endif
     }
 
     #endregion
@@ -1716,10 +1739,21 @@ namespace Kirinji.LightWands
         {
             return Match(ObjectEx.ToString, ObjectEx.ToString, () => "Empty");
         }
+
+#if USE_CHOICE_IMPLICIT
+        public static implicit operator ChoiceWithEmpty<T1, T2>(T1 value) { return new ChoiceWithEmpty<T1, T2>(value); }
+        public static implicit operator ChoiceWithEmpty<T1, T2>(T2 value) { return new ChoiceWithEmpty<T1, T2>(value); }
+        public static implicit operator ChoiceWithEmpty<T1, T2>(EmptyChoice empty) { return new ChoiceWithEmpty<T1, T2>(); }
+#endif
     }
 
     [DataContract]
-    public sealed class ChoiceWithEmpty<T1, T2, T3> : IEquatable<ChoiceWithEmpty<T1, T2, T3>>
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    sealed class ChoiceWithEmpty<T1, T2, T3> : IEquatable<ChoiceWithEmpty<T1, T2, T3>>
     {
         [DataMember]
         readonly int? valueIndex;
@@ -1861,10 +1895,22 @@ namespace Kirinji.LightWands
         {
             return Match(ObjectEx.ToString, ObjectEx.ToString, ObjectEx.ToString, () => "Empty");
         }
+
+#if USE_CHOICE_IMPLICIT
+        public static implicit operator ChoiceWithEmpty<T1, T2, T3>(T1 value) { return new ChoiceWithEmpty<T1, T2, T3>(value); }
+        public static implicit operator ChoiceWithEmpty<T1, T2, T3>(T2 value) { return new ChoiceWithEmpty<T1, T2, T3>(value); }
+        public static implicit operator ChoiceWithEmpty<T1, T2, T3>(T3 value) { return new ChoiceWithEmpty<T1, T2, T3>(value); }
+        public static implicit operator ChoiceWithEmpty<T1, T2, T3>(EmptyChoice empty) { return new ChoiceWithEmpty<T1, T2, T3>(); }
+#endif
     }
 
     [DataContract]
-    public sealed class ChoiceWithEmpty<T1, T2, T3, T4> : IEquatable<ChoiceWithEmpty<T1, T2, T3, T4>>
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    sealed class ChoiceWithEmpty<T1, T2, T3, T4> : IEquatable<ChoiceWithEmpty<T1, T2, T3, T4>>
     {
         [DataMember]
         readonly int? valueIndex;
@@ -2034,7 +2080,35 @@ namespace Kirinji.LightWands
         {
             return Match(ObjectEx.ToString, ObjectEx.ToString, ObjectEx.ToString, ObjectEx.ToString, () => "Empty");
         }
+
+#if USE_CHOICE_IMPLICIT
+        public static implicit operator ChoiceWithEmpty<T1, T2, T3, T4>(T1 value) { return new ChoiceWithEmpty<T1, T2, T3, T4>(value); }
+        public static implicit operator ChoiceWithEmpty<T1, T2, T3, T4>(T2 value) { return new ChoiceWithEmpty<T1, T2, T3, T4>(value); }
+        public static implicit operator ChoiceWithEmpty<T1, T2, T3, T4>(T3 value) { return new ChoiceWithEmpty<T1, T2, T3, T4>(value); }
+        public static implicit operator ChoiceWithEmpty<T1, T2, T3, T4>(T4 value) { return new ChoiceWithEmpty<T1, T2, T3, T4>(value); }
+        public static implicit operator ChoiceWithEmpty<T1, T2, T3, T4>(EmptyChoice empty) { return new ChoiceWithEmpty<T1, T2, T3, T4>(); }
+#endif
     }
+
+    #endregion
+
+
+    #region EmptyChoice
+
+#if USE_CHOICE_IMPLICIT
+
+    public struct EmptyChoice
+    {
+        public static EmptyChoice Default
+        {
+            get
+            {
+                return new EmptyChoice();
+            }
+        }
+    }
+
+#endif
 
     #endregion
 
