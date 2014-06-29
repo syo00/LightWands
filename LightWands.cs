@@ -1395,7 +1395,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    sealed class Choice<T1, T2> : IEquatable<Choice<T1, T2>>
+    sealed class Choice<T1, T2> : IEquatable<IChoice>, IChoice
     {
         readonly ChoiceWithEmpty<T1, T2> coreChoice;
 
@@ -1426,20 +1426,19 @@ namespace Kirinji.LightWands
             coreChoice.Action(action1, action2, null);
         }
 
+        public object AsObject()
+        {
+            return Match<object>(x => x, x => x);
+        }
+
         public override bool Equals(object obj)
         {
-            return Equals(obj as Choice<T1, T2>);
+            return Choice.Equals(this, obj);
         }
 
-        public bool Equals(Choice<T1, T2> other)
+        public bool Equals(IChoice other)
         {
-            return Equals(other, null, null);
-        }
-
-        public bool Equals(Choice<T1, T2> other, Func<T1, T1, bool> comparer1, Func<T2, T2, bool> comparer2)
-        {
-            if (other == null) return false;
-            return coreChoice.Equals(other.coreChoice, comparer1, comparer2);
+            return Choice.Equals(this, other);
         }
 
         public override int GetHashCode()
@@ -1464,7 +1463,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    sealed class Choice<T1, T2, T3> : IEquatable<Choice<T1, T2, T3>>
+    sealed class Choice<T1, T2, T3> : IEquatable<IChoice>, IChoice
     {
         readonly ChoiceWithEmpty<T1, T2, T3> coreChoice;
 
@@ -1500,20 +1499,19 @@ namespace Kirinji.LightWands
             coreChoice.Action(action1, action2, action3, null);
         }
 
+        public object AsObject()
+        {
+            return Match<object>(x => x, x => x, x => x);
+        }
+
         public override bool Equals(object obj)
         {
-            return Equals(obj as Choice<T1, T2, T3>);
+            return Choice.Equals(this, obj);
         }
 
-        public bool Equals(Choice<T1, T2, T3> other)
+        public bool Equals(IChoice other)
         {
-            return Equals(other, null, null, null);
-        }
-
-        public bool Equals(Choice<T1, T2, T3> other, Func<T1, T1, bool> comparer1, Func<T2, T2, bool> comparer2, Func<T3, T3, bool> comparer3)
-        {
-            if (other == null) return false;
-            return coreChoice.Equals(other.coreChoice, comparer1, comparer2, comparer3);
+            return Choice.Equals(this, other);
         }
 
         public override int GetHashCode()
@@ -1539,7 +1537,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    sealed class Choice<T1, T2, T3, T4> : IEquatable<Choice<T1, T2, T3, T4>>
+    sealed class Choice<T1, T2, T3, T4> : IEquatable<IChoice>, IChoice
     {
         readonly ChoiceWithEmpty<T1, T2, T3, T4> coreChoice;
 
@@ -1580,20 +1578,19 @@ namespace Kirinji.LightWands
             coreChoice.Action(action1, action2, action3, action4, null);
         }
 
+        public object AsObject()
+        {
+            return Match<object>(x => x, x => x, x => x, x => x);
+        }
+
         public override bool Equals(object obj)
         {
-            return Equals(obj as Choice<T1, T2, T3, T4>);
+            return Choice.Equals(this, obj);
         }
 
-        public bool Equals(Choice<T1, T2, T3, T4> other)
+        public bool Equals(IChoice other)
         {
-            return Equals(other, null, null, null, null);
-        }
-
-        public bool Equals(Choice<T1, T2, T3, T4> other, Func<T1, T1, bool> comparer1, Func<T2, T2, bool> comparer2, Func<T3, T3, bool> comparer3, Func<T4, T4, bool> comparer4)
-        {
-            if (other == null) return false;
-            return coreChoice.Equals(other.coreChoice, comparer1, comparer2, comparer3, comparer4);
+            return Choice.Equals(this, other);
         }
 
         public override int GetHashCode()
@@ -1625,7 +1622,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    sealed class ChoiceWithEmpty<T1, T2> : IEquatable<ChoiceWithEmpty<T1, T2>>
+    sealed class ChoiceWithEmpty<T1, T2> : IEquatable<IChoice>, IChoice
     {
         [DataMember]
         readonly int? valueIndex;
@@ -1689,45 +1686,19 @@ namespace Kirinji.LightWands
             }
         }
 
+        public object AsObject()
+        {
+            return Match<object>(x => x, x => x, () => Unit.Default);
+        }
+
         public override bool Equals(object obj)
         {
-            return Equals(obj as ChoiceWithEmpty<T1, T2>);
+            return Choice.Equals(this, obj);
         }
 
-        public bool Equals(ChoiceWithEmpty<T1, T2> other)
+        public bool Equals(IChoice other)
         {
-            return Equals(other, null, null);
-        }
-
-        public bool Equals(ChoiceWithEmpty<T1, T2> other, Func<T1, T1, bool> comparer1, Func<T2, T2, bool> comparer2)
-        {
-            if (other == null) return false;
-
-            if (this.valueIndex == 0)
-            {
-                if (other.valueIndex != 0) return false;
-                if (comparer1 == null)
-                {
-                    return Object.Equals(this.value1, other.value1);
-                }
-                else
-                {
-                    return comparer1(this.value1, other.value1);
-                }
-            }
-            if (this.valueIndex == 1)
-            {
-                if (other.valueIndex != 1) return false;
-                if (comparer2 == null)
-                {
-                    return Object.Equals(this.value2, other.value2);
-                }
-                else
-                {
-                    return comparer2(this.value2, other.value2);
-                }
-            }
-            return true;
+            return Choice.Equals(this, other);
         }
 
         public override int GetHashCode()
@@ -1743,7 +1714,7 @@ namespace Kirinji.LightWands
 #if USE_CHOICE_IMPLICIT
         public static implicit operator ChoiceWithEmpty<T1, T2>(T1 value) { return new ChoiceWithEmpty<T1, T2>(value); }
         public static implicit operator ChoiceWithEmpty<T1, T2>(T2 value) { return new ChoiceWithEmpty<T1, T2>(value); }
-        public static implicit operator ChoiceWithEmpty<T1, T2>(EmptyChoice empty) { return new ChoiceWithEmpty<T1, T2>(); }
+        public static implicit operator ChoiceWithEmpty<T1, T2>(Unit empty) { return new ChoiceWithEmpty<T1, T2>(); }
 #endif
     }
 
@@ -1753,7 +1724,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    sealed class ChoiceWithEmpty<T1, T2, T3> : IEquatable<ChoiceWithEmpty<T1, T2, T3>>
+    sealed class ChoiceWithEmpty<T1, T2, T3> : IEquatable<IChoice>, IChoice
     {
         [DataMember]
         readonly int? valueIndex;
@@ -1833,57 +1804,19 @@ namespace Kirinji.LightWands
             }
         }
 
+        public object AsObject()
+        {
+            return Match<object>(x => x, x => x, x => x, () => Unit.Default);
+        }
+
         public override bool Equals(object obj)
         {
-            return Equals(obj as ChoiceWithEmpty<T1, T2, T3>);
+            return Choice.Equals(this, obj);
         }
 
-        public bool Equals(ChoiceWithEmpty<T1, T2, T3> other)
+        public bool Equals(IChoice other)
         {
-            return Equals(other, null, null, null);
-        }
-
-        public bool Equals(ChoiceWithEmpty<T1, T2, T3> other, Func<T1, T1, bool> comparer1, Func<T2, T2, bool> comparer2, Func<T3, T3, bool> comparer3)
-        {
-            if (other == null) return false;
-
-            if (this.valueIndex == 0)
-            {
-                if (other.valueIndex != 0) return false;
-                if (comparer1 == null)
-                {
-                    return Object.Equals(this.value1, other.value1);
-                }
-                else
-                {
-                    return comparer1(this.value1, other.value1);
-                }
-            }
-            if (this.valueIndex == 1)
-            {
-                if (other.valueIndex != 1) return false;
-                if (comparer2 == null)
-                {
-                    return Object.Equals(this.value2, other.value2);
-                }
-                else
-                {
-                    return comparer2(this.value2, other.value2);
-                }
-            }
-            if (this.valueIndex == 2)
-            {
-                if (other.valueIndex != 2) return false;
-                if (comparer3 == null)
-                {
-                    return Object.Equals(this.value3, other.value3);
-                }
-                else
-                {
-                    return comparer3(this.value3, other.value3);
-                }
-            }
-            return true;
+            return Choice.Equals(this, other);
         }
 
         public override int GetHashCode()
@@ -1900,7 +1833,7 @@ namespace Kirinji.LightWands
         public static implicit operator ChoiceWithEmpty<T1, T2, T3>(T1 value) { return new ChoiceWithEmpty<T1, T2, T3>(value); }
         public static implicit operator ChoiceWithEmpty<T1, T2, T3>(T2 value) { return new ChoiceWithEmpty<T1, T2, T3>(value); }
         public static implicit operator ChoiceWithEmpty<T1, T2, T3>(T3 value) { return new ChoiceWithEmpty<T1, T2, T3>(value); }
-        public static implicit operator ChoiceWithEmpty<T1, T2, T3>(EmptyChoice empty) { return new ChoiceWithEmpty<T1, T2, T3>(); }
+        public static implicit operator ChoiceWithEmpty<T1, T2, T3>(Unit empty) { return new ChoiceWithEmpty<T1, T2, T3>(); }
 #endif
     }
 
@@ -1910,7 +1843,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    sealed class ChoiceWithEmpty<T1, T2, T3, T4> : IEquatable<ChoiceWithEmpty<T1, T2, T3, T4>>
+    sealed class ChoiceWithEmpty<T1, T2, T3, T4> : IEquatable<IChoice>, IChoice
     {
         [DataMember]
         readonly int? valueIndex;
@@ -2006,69 +1939,19 @@ namespace Kirinji.LightWands
             }
         }
 
+        public object AsObject()
+        {
+            return Match<object>(x => x, x => x, x => x, x => x, () => Unit.Default);
+        }
+
         public override bool Equals(object obj)
         {
-            return Equals(obj as ChoiceWithEmpty<T1, T2, T3, T4>);
+            return Choice.Equals(this, obj);
         }
 
-        public bool Equals(ChoiceWithEmpty<T1, T2, T3, T4> other)
+        public bool Equals(IChoice other)
         {
-            return Equals(other, null, null, null, null);
-        }
-
-        public bool Equals(ChoiceWithEmpty<T1, T2, T3, T4> other, Func<T1, T1, bool> comparer1, Func<T2, T2, bool> comparer2, Func<T3, T3, bool> comparer3, Func<T4, T4, bool> comparer4)
-        {
-            if (other == null) return false;
-
-            if (this.valueIndex == 0)
-            {
-                if (other.valueIndex != 0) return false;
-                if (comparer1 == null)
-                {
-                    return Object.Equals(this.value1, other.value1);
-                }
-                else
-                {
-                    return comparer1(this.value1, other.value1);
-                }
-            }
-            if (this.valueIndex == 1)
-            {
-                if (other.valueIndex != 1) return false;
-                if (comparer2 == null)
-                {
-                    return Object.Equals(this.value2, other.value2);
-                }
-                else
-                {
-                    return comparer2(this.value2, other.value2);
-                }
-            }
-            if (this.valueIndex == 2)
-            {
-                if (other.valueIndex != 2) return false;
-                if (comparer3 == null)
-                {
-                    return Object.Equals(this.value3, other.value3);
-                }
-                else
-                {
-                    return comparer3(this.value3, other.value3);
-                }
-            }
-            if (this.valueIndex == 3)
-            {
-                if (other.valueIndex != 3) return false;
-                if (comparer4 == null)
-                {
-                    return Object.Equals(this.value4, other.value4);
-                }
-                else
-                {
-                    return comparer4(this.value4, other.value4);
-                }
-            }
-            return true;
+            return Choice.Equals(this, other);
         }
 
         public override int GetHashCode()
@@ -2086,29 +1969,98 @@ namespace Kirinji.LightWands
         public static implicit operator ChoiceWithEmpty<T1, T2, T3, T4>(T2 value) { return new ChoiceWithEmpty<T1, T2, T3, T4>(value); }
         public static implicit operator ChoiceWithEmpty<T1, T2, T3, T4>(T3 value) { return new ChoiceWithEmpty<T1, T2, T3, T4>(value); }
         public static implicit operator ChoiceWithEmpty<T1, T2, T3, T4>(T4 value) { return new ChoiceWithEmpty<T1, T2, T3, T4>(value); }
-        public static implicit operator ChoiceWithEmpty<T1, T2, T3, T4>(EmptyChoice empty) { return new ChoiceWithEmpty<T1, T2, T3, T4>(); }
+        public static implicit operator ChoiceWithEmpty<T1, T2, T3, T4>(Unit empty) { return new ChoiceWithEmpty<T1, T2, T3, T4>(); }
 #endif
     }
 
     #endregion
 
 
-    #region EmptyChoice
+    #region IChoice
 
-#if USE_CHOICE_IMPLICIT
-
-    public struct EmptyChoice
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    interface IChoice
     {
-        public static EmptyChoice Default
+        object AsObject();
+    }
+
+    #endregion
+
+
+    #region Choice (static)
+
+    internal static class Choice
+    {
+        public static bool Equals(IChoice x, IChoice y)
         {
-            get
-            {
-                return new EmptyChoice();
-            }
+            if (x == null && y == null) return true;
+            if (x == null || y == null) return false;
+            return Object.Equals(x.AsObject(), y.AsObject());
+        }
+
+        public static bool Equals(IChoice x, object y)
+        {
+            Contract.Requires<ArgumentNullException>(x != null);
+
+            var ichoice = y as IChoice;
+            if (ichoice != null) return Equals(x, ichoice);
+
+            return Object.Equals(x.AsObject(), y);
         }
     }
 
+
+#region Unit
+
+
+#if NET40_SL5_WINRT45_WP8
+    public struct Unit : IEquatable<Unit>
+    {
+        public static Unit Default
+        {
+            get
+            {
+                return new Unit();
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Unit;
+        }
+
+        public bool Equals(Unit other)
+        {
+            return true;
+        }
+
+        public static bool operator ==(Unit first, Unit second)
+        {
+            return first.Equals(second);
+        }
+
+        public static bool operator !=(Unit first, Unit second)
+        {
+            return !(first == second);
+        }
+
+        public override int GetHashCode()
+        {
+            return 123456;
+        }
+
+        public override string ToString()
+        {
+            return "()";
+        }
+    }
 #endif
+
+#endregion
 
     #endregion
 
