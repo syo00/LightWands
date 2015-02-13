@@ -3308,7 +3308,7 @@ namespace Kirinji.LightWands.Tests
                 return this.notifications
                     .Where(n => n.Kind == NotificationKind.OnNext)
                     .Select(n => n.Value)
-                    .ToList();
+                    .ToArray();
             }
         }
 
@@ -3320,7 +3320,7 @@ namespace Kirinji.LightWands.Tests
                 return this.notifications
                     .Where(n => n.Kind == NotificationKind.OnError)
                     .Select(n => n.Exception)
-                    .ToList();
+                    .ToArray();
             }
         }
 
@@ -3329,7 +3329,7 @@ namespace Kirinji.LightWands.Tests
         {
             get
             {
-                return notifications.ToList();
+                return notifications.ToArray();
             }
         }
 
