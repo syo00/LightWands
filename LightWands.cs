@@ -564,6 +564,7 @@ namespace Kirinji.LightWands
             return !sourceList.Any();
         }
 
+        // ToDo: もっと色んな所で使えるようにしてこれに置き換えたい
         private static IList<T> ToReadOnlyList<T>(this IEnumerable<T> source)
         {
             Contract.Requires<ArgumentNullException>(source != null);
