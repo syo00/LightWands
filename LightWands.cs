@@ -55,7 +55,17 @@
 #if TESTS
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #endif
-
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
+using System.Globalization;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
+using System.Threading.Tasks;
 #if NET45_WINRT45_WP8 || TESTS
 using System.Collections.Specialized;
 using System.Reactive;
@@ -65,16 +75,6 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
 #endif
-
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics.Contracts;
-using System.Globalization;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Threading.Tasks;
 
 
 namespace Kirinji.LightWands
@@ -101,7 +101,6 @@ namespace Kirinji.LightWands
 
         public static bool TryDispose<T>(T disposingValue)
         {
-            if (disposingValue == null) return false;
             var d = disposingValue as IDisposable;
             if (d == null) return false;
             d.Dispose();
@@ -119,7 +118,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static partial class EnumerableEx
+    static class EnumerableEx
     {
         public static IEnumerable<T> Empty<T>()
         {
@@ -128,7 +127,7 @@ namespace Kirinji.LightWands
 
         public static IEnumerable<T> Return<T>(T value)
         {
-            return new T[] { value };
+            return new[] { value };
         }
     }
 
@@ -171,14 +170,7 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(predicate != null);
             Contract.Ensures(Contract.Result<IEnumerable<TKey>>() != null);
 
-            var removingKeys = new List<TKey>();
-            foreach (var pair in source)
-            {
-                if (predicate(pair.Key))
-                {
-                    removingKeys.Add(pair.Key);
-                }
-            }
+            var removingKeys = source.Where(pair => predicate(pair.Key)).Select(pair => pair.Key).ToList();
 
             foreach (var removingKey in removingKeys)
             {
@@ -197,10 +189,7 @@ namespace Kirinji.LightWands
             {
                 return value;
             }
-            else
-            {
-                return default(TValue);
-            }
+            return default(TValue);
         }
     }
 
@@ -214,7 +203,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static partial class EnumerableExtensions
+    static class EnumerableExtensions
     {
         public static IEnumerable<T> Do<T>(this IEnumerable<T> source, Action<T> action)
         {
@@ -326,9 +315,11 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
 
-            for (int i = 0; i <= source.Count() - 1; i++)
+            var loopCount = 0;
+            foreach (var s in source)
             {
-                if (predicate(source.ElementAt(i))) return i;
+                if (predicate(s)) return loopCount;
+                loopCount++;
             }
 
             return null;
@@ -346,9 +337,11 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
 
-            for (int i = source.Count() - 1; i >= 0; i--)
+            var sourceList = source.ToReadOnlyList();
+
+            for (int i = sourceList.Count - 1; i >= 0; i--)
             {
-                if (predicate(source.ElementAt(i))) return i;
+                if (predicate(sourceList[i])) return i;
             }
             return null;
         }
@@ -365,10 +358,12 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
 
+            var sourceList = source.ToReadOnlyList();
+
             int? firstIndex = null;
-            for (int i = 0; i <= source.Count() - 1; i++)
+            for (int i = 0; i <= sourceList.Count - 1; i++)
             {
-                if (predicate(source.ElementAt(i)))
+                if (predicate(sourceList[i]))
                 {
                     if (firstIndex == null)
                     {
@@ -389,9 +384,12 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(predicate != null);
 
             List<int> matchedIndexes = new List<int>();
-            for (int i = 0; i <= source.Count() - 1; i++)
+            var loopCount = 0;
+            foreach(var s in source)
             {
-                if (predicate(source.ElementAt(i))) matchedIndexes.Add(i);
+                if (predicate(s)) matchedIndexes.Add(loopCount);
+
+                loopCount++;
             }
             return matchedIndexes;
         }
@@ -407,14 +405,12 @@ namespace Kirinji.LightWands
         {
             Contract.Requires<ArgumentNullException>(source != null);
 
-            if (source.Count() - 1 >= index)
+            var sourceList = source.ToReadOnlyList();
+            if (sourceList.Count - 1 >= index)
             {
-                return source.ElementAt(index);
+                return sourceList[index];
             }
-            else
-            {
-                return null;
-            }
+            return null;
         }
 
         /// <summary>
@@ -427,14 +423,12 @@ namespace Kirinji.LightWands
         {
             Contract.Requires<ArgumentNullException>(source != null);
 
-            if (source.Any())
+            foreach (var s in source)
             {
-                return source.ElementAt(0);
+                return s;
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
         /// <summary>
@@ -449,15 +443,13 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
 
-            int? index = FirstIndex(source, predicate);
+            var sourceList = source.ToReadOnlyList();
+            int? index = FirstIndex(sourceList, predicate);
             if (index.HasValue)
             {
-                return source.ElementAt(index.Value);
+                return sourceList[index.Value];
             }
-            else
-            {
-                return null;
-            }
+            return null;
         }
 
         /// <summary>
@@ -470,14 +462,12 @@ namespace Kirinji.LightWands
         {
             Contract.Requires<ArgumentNullException>(source != null);
 
-            if (source.Any())
+            var sourceList = source.ToReadOnlyList();
+            if (sourceList.Count != 0)
             {
-                return source.ElementAt(source.Count() - 1);
+                return sourceList[sourceList.Count - 1];
             }
-            else
-            {
-                return null;
-            }
+            return null;
         }
 
         /// <summary>
@@ -492,15 +482,13 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
 
-            int? index = LastIndex(source, predicate);
+            var sourceList = source.ToReadOnlyList();
+            int? index = LastIndex(sourceList, predicate);
             if (index.HasValue)
             {
-                return source.ElementAt(index.Value);
+                return sourceList[index.Value];
             }
-            else
-            {
-                return null;
-            }
+            return null;
         }
 
         // SingleOrNull<T> の predicate がないオーバーロードメソッドは、例外を返すかnullを返すかのシチュエーションがはっきりしないので未定義
@@ -518,15 +506,13 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
 
-            int? index = SingleIndex(source, predicate);
+            var sourceList = source.ToReadOnlyList();
+            int? index = SingleIndex(sourceList, predicate);
             if (index.HasValue)
             {
-                return source.ElementAt(index.Value);
+                return sourceList[index.Value];
             }
-            else
-            {
-                return null;
-            }
+            return null;
         }
 
         public static IEnumerable<KeyValuePair<int, T>> Indexes<T>(this IEnumerable<T> source)
@@ -577,6 +563,20 @@ namespace Kirinji.LightWands
             }
             return !sourceList.Any();
         }
+
+        private static IList<T> ToReadOnlyList<T>(this IEnumerable<T> source)
+        {
+            Contract.Requires<ArgumentNullException>(source != null);
+            Contract.Ensures(Contract.Result<IList<T>>() != null);
+
+            var casted = source as IList<T>;
+            if (casted != null)
+            {
+                return casted;
+            }
+
+            return source.ToArray();
+        }
     }
 
     #endregion
@@ -602,8 +602,7 @@ namespace Kirinji.LightWands
                 source.RemoveAt(firstIndex.Value);
                 return true;
             }
-            else
-                return false;
+            return false;
         }
 
         public static bool RemoveFirst<T>(this IList<T> source)
@@ -612,11 +611,8 @@ namespace Kirinji.LightWands
 
             if (source.Count == 0)
                 return false;
-            else
-            {
-                source.RemoveAt(0);
-                return true;
-            }
+            source.RemoveAt(0);
+            return true;
         }
 
         public static bool RemoveLast<T>(this IList<T> source)
@@ -625,11 +621,8 @@ namespace Kirinji.LightWands
 
             if (source.Count == 0)
                 return false;
-            else
-            {
-                source.RemoveAt(source.Count - 1);
-                return true;
-            }
+            source.RemoveAt(source.Count - 1);
+            return true;
         }
 
         public static bool RemoveLast<T>(this IList<T> source, Func<T, bool> predicate)
@@ -643,8 +636,7 @@ namespace Kirinji.LightWands
                 source.RemoveAt(lastIndex.Value);
                 return true;
             }
-            else
-                return false;
+            return false;
         }
 
         public static IEnumerable<T> RemoveAll<T>(this IList<T> source)
@@ -660,7 +652,7 @@ namespace Kirinji.LightWands
         {
             Contract.Requires<ArgumentNullException>(source != null);
 
-            return source.RemoveAll(t => Object.Equals(t, item));
+            return source.RemoveAll(t => Equals(t, item));
         }
 
         public static IEnumerable<T> RemoveAll<T>(this IList<T> source, Func<T, bool> predicate)
@@ -699,14 +691,7 @@ namespace Kirinji.LightWands
 
             if (count <= -1) throw new ArgumentOutOfRangeException();
 
-            var returnList = new List<T>();
-
-            foreach (var i in Enumerable.Range(0, count))
-            {
-                returnList.Add(source.PopFirst());
-            }
-
-            return returnList;
+            return Enumerable.Range(0, count).Select(i => source.PopFirst()).ToList();
         }
 
         public static T PopLast<T>(this IList<T> source)
@@ -725,7 +710,8 @@ namespace Kirinji.LightWands
 
             var returnList = new List<T>();
 
-            foreach (var i in Enumerable.Range(0, count))
+            // ReSharper disable once UnusedVariable
+            foreach (var _ in Enumerable.Range(0, count))
             {
                 returnList.Add(source.PopLast());
             }
@@ -756,10 +742,9 @@ namespace Kirinji.LightWands
         {
             if (s == null)
                 return null;
-            else if (s == "")
+            if (s == "")
                 return "";
-            else
-                return s.Trim(' ', '\r', '\n');
+            return s.Trim(' ', '\r', '\n');
         }
 
         /// <summary>
@@ -774,7 +759,7 @@ namespace Kirinji.LightWands
             return s.Replace(" ", "").Replace("\r", "").Replace("\n", "");
         }
 
-        private static IDictionary<string, string> WidthDicExcludingRegexSymbols = new Dictionary<string, string>
+        private static readonly IDictionary<string, string> WidthDicExcludingRegexSymbols = new Dictionary<string, string>
             {
 
                 {"Ａ","A"},
@@ -920,7 +905,7 @@ namespace Kirinji.LightWands
             };
 
         // ToDo: 不完全
-        static IDictionary<string, string> WidthDicRegexSymbolsToRegexSymbols = new Dictionary<string, string>
+        static readonly IDictionary<string, string> WidthDicRegexSymbolsToRegexSymbols = new Dictionary<string, string>
         {
             {"￥",@"\\"},
             {"（",@"\("},
@@ -928,7 +913,7 @@ namespace Kirinji.LightWands
         };
 
         // ToDo: 不完全
-        static IDictionary<string, string> WidthDicRegexSymbolsToString = new Dictionary<string, string>
+        static readonly IDictionary<string, string> WidthDicRegexSymbolsToString = new Dictionary<string, string>
         {
             {"￥",@"\"},
             {"（","("},
@@ -944,19 +929,8 @@ namespace Kirinji.LightWands
         {
             Contract.Requires<ArgumentNullException>(s != null);
 
-            var str = s;
-
-            foreach (var set in WidthDicExcludingRegexSymbols)
-            {
-                str = str.Replace(set.Key, set.Value);
-            }
-
-            foreach (var set in WidthDicRegexSymbolsToRegexSymbols)
-            {
-                str = str.Replace(set.Key, set.Value);
-            }
-
-            return str;
+            var intermediate = WidthDicExcludingRegexSymbols.Aggregate(s, (current, set) => current.Replace(set.Key, set.Value));
+            return WidthDicRegexSymbolsToRegexSymbols.Aggregate(intermediate, (current, set) => current.Replace(set.Key, set.Value));
         }
 
         /// <summary>
@@ -984,7 +958,7 @@ namespace Kirinji.LightWands
         }
 
 
-        static IDictionary<string, string> KanaDic = new Dictionary<string, string>
+        static readonly IDictionary<string, string> KanaDic = new Dictionary<string, string>
         {
             {"あ", "ア"},
             {"い", "イ"},
@@ -1067,7 +1041,7 @@ namespace Kirinji.LightWands
             {"ゕ", "ヵ"},
             {"ゖ", "ヶ"},
             {"ゔ", "ヴ"},
-            {"ゝ", "ヽ"},
+            {"ゝ", "ヽ"}
             //{"ゞ", "ヾ"} なぜかバグる
         };
 
@@ -1094,8 +1068,7 @@ namespace Kirinji.LightWands
             byte outByte;
             if (byte.TryParse(s, out outByte))
                 return outByte;
-            else
-                return null;
+            return null;
         }
 
         public static byte? ByteParse(this string s, NumberStyles numberStyles, IFormatProvider formatProvider)
@@ -1103,8 +1076,7 @@ namespace Kirinji.LightWands
             byte outByte;
             if (byte.TryParse(s, numberStyles, formatProvider, out outByte))
                 return outByte;
-            else
-                return null;
+            return null;
         }
 
         public static int? IntParse(this string s)
@@ -1112,8 +1084,7 @@ namespace Kirinji.LightWands
             int outInt;
             if (int.TryParse(s, out outInt))
                 return outInt;
-            else
-                return null;
+            return null;
         }
 
         public static int? IntParse(this string s, NumberStyles numberStyles, IFormatProvider formatProvider)
@@ -1121,8 +1092,7 @@ namespace Kirinji.LightWands
             int outInt;
             if (int.TryParse(s, numberStyles, formatProvider, out outInt))
                 return outInt;
-            else
-                return null;
+            return null;
         }
 
         public static long? LongParse(this string s)
@@ -1130,8 +1100,7 @@ namespace Kirinji.LightWands
             long outLong;
             if (long.TryParse(s, out outLong))
                 return outLong;
-            else
-                return null;
+            return null;
         }
 
         public static long? LongParse(this string s, NumberStyles numberStyles, IFormatProvider formatProvider)
@@ -1139,8 +1108,7 @@ namespace Kirinji.LightWands
             long outLong;
             if (long.TryParse(s, numberStyles, formatProvider, out outLong))
                 return outLong;
-            else
-                return null;
+            return null;
         }
 
         public static DateTime? DateTimeParse(this string s)
@@ -1148,8 +1116,7 @@ namespace Kirinji.LightWands
             DateTime outDate;
             if (DateTime.TryParse(s, out outDate))
                 return outDate;
-            else
-                return null;
+            return null;
         }
 
         public static DateTime? DateTimeParse(this string s, IFormatProvider formatProvider, DateTimeStyles dateTimeStyles)
@@ -1157,8 +1124,7 @@ namespace Kirinji.LightWands
             DateTime outDate;
             if (DateTime.TryParse(s, formatProvider, dateTimeStyles, out outDate))
                 return outDate;
-            else
-                return null;
+            return null;
         }
 
         public static DateTime? DateTimeParseExact(this string s, IFormatProvider formatProvider, DateTimeStyles dateTimeStyles, params string[] formats)
@@ -1166,8 +1132,7 @@ namespace Kirinji.LightWands
             DateTime outDate;
             if (DateTime.TryParseExact(s, formats, formatProvider, dateTimeStyles, out outDate))
                 return outDate;
-            else
-                return null;
+            return null;
         }
 
         public static bool? BoolParse(this string s)
@@ -1175,8 +1140,7 @@ namespace Kirinji.LightWands
             bool outBool;
             if (bool.TryParse(s, out outBool))
                 return outBool;
-            else
-                return null;
+            return null;
         }
     }
 
@@ -1188,8 +1152,8 @@ namespace Kirinji.LightWands
     /// <summary>Creates <c>EqualityComparer&lt;T&gt;</c> by delegates.</summary>
     class AnonymousEqualityComparer<T> : EqualityComparer<T>
     {
-        private Func<T, T, bool> comparerDelegate;
-        private Func<T, int> getHashCodeDelegate;
+        private readonly Func<T, T, bool> comparerDelegate;
+        private readonly Func<T, int> getHashCodeDelegate;
 
         /// <remarks>Not recommended to use this constructor because GetHashCode always returns same value and it makes programs slow.</remarks>
         public AnonymousEqualityComparer(Func<T, T, bool> comparerDelegate)
@@ -1209,12 +1173,12 @@ namespace Kirinji.LightWands
 
         public override bool Equals(T x, T y)
         {
-            return this.comparerDelegate(x, y);
+            return comparerDelegate(x, y);
         }
 
         public override int GetHashCode(T obj)
         {
-            return this.getHashCodeDelegate(obj);
+            return getHashCodeDelegate(obj);
         }
     }
 
@@ -1247,7 +1211,7 @@ namespace Kirinji.LightWands
         {
             Contract.Requires<ArgumentNullException>(comparingParameters != null);
 
-            Func<T, T, bool> comparer = (x, y) => comparingParameters.All(f => Object.Equals(f(x), f(y)));
+            Func<T, T, bool> comparer = (x, y) => comparingParameters.All(f => Equals(f(x), f(y)));
             Func<T, int> hashCodeCreator = t => comparingParameters
                 .Select(f => f(t))
                 .Select(p => p == null ? 0 : p.GetHashCode())
@@ -1267,8 +1231,8 @@ namespace Kirinji.LightWands
         /// <remarks>Be careful not using boxed objects.</remarks>
         public static EqualityComparer<T> ReferenceEquals<T>() where T : class
         {
-            Func<T, T, bool> comparer = (x, y) => Object.ReferenceEquals(x, y);
-            Func<T, int> hashCodeCreator = t => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(t);
+            Func<T, T, bool> comparer = ReferenceEquals;
+            Func<T, int> hashCodeCreator = RuntimeHelpers.GetHashCode;
 
             return new AnonymousEqualityComparer<T>(comparer, hashCodeCreator);
         }
@@ -1276,13 +1240,13 @@ namespace Kirinji.LightWands
         /// <summary>Creates <c>EqualityComparer&lt;IEnumerable&lt;T&gt;&gt;</c> to compare sequentially.</summary>
         public static EqualityComparer<IEnumerable<T>> EnumerableOf<T>()
         {
-            return EnumerableOfInner<T>(false, Comparer<T>.Default);
+            return EnumerableOfInner(false, Comparer<T>.Default);
         }
 
         /// <summary>Creates <c>EqualityComparer&lt;IEnumerable&lt;T&gt;&gt;</c> to compare the number of each values.</summary>
         public static EqualityComparer<IEnumerable<T>> EnumerableOfUnordered<T>()
         {
-            return EnumerableOfInner<T>(true, Comparer<T>.Default);
+            return EnumerableOfInner(true, Comparer<T>.Default);
         }
 
         /// <summary>Creates <c>EqualityComparer&lt;IEnumerable&lt;T&gt;&gt;</c> to compare the number of each values.</summary>
@@ -1290,7 +1254,7 @@ namespace Kirinji.LightWands
         {
             Contract.Requires<ArgumentNullException>(comparer != null);
 
-            return EnumerableOfInner<T>(true, comparer);
+            return EnumerableOfInner(true, comparer);
         }
 
         // ignoreOrder = true のとき、順序がバラバラでも要素の個数が合っていれば Equal となる
@@ -1299,14 +1263,22 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(orderingComparer != null);
 
             Func<IEnumerable<T>, int> hashCodeCreator = e =>
-                e.Count() == 0
-                ? 1
-                : e
+            {
+                var array = e.ToArray();
+
+                if (array.Length == 0)
+                {
+                    return 1;
+                }
+
+                return array
                     .Select(p => p == null ? 0 : p.GetHashCode())
                     .Aggregate((l, r) => l ^ r);
+            };
+
             if (ignoreOrder)
             {
-                return EqualityComparer.Create<IEnumerable<T>>(
+                return Create(
                        (e1, e2) =>
                        {
                            if (e1 == null || e2 == null) return e1 == e2;
@@ -1316,16 +1288,13 @@ namespace Kirinji.LightWands
                        },
                        hashCodeCreator);
             }
-            else
-            {
-                return EqualityComparer.Create<IEnumerable<T>>(
-                    (e1, e2) =>
-                    {
-                        if (e1 == null || e2 == null) return e1 == e2;
-                        return e1.SequenceEqual(e2);
-                    },
-                    hashCodeCreator);
-            }
+            return Create(
+                (e1, e2) =>
+                {
+                    if (e1 == null || e2 == null) return e1 == e2;
+                    return e1.SequenceEqual(e2);
+                },
+                hashCodeCreator);
         }
     }
 
@@ -1359,7 +1328,8 @@ namespace Kirinji.LightWands
         /// <summary>
         /// Null-safe method for ToString.
         /// </summary>
-        /// <param name="nullString">Returning string value when vakue is null.</param>
+        /// <param name="value">Value to be string.</param>
+        /// <param name="nullString">Returning string value when value is null.</param>
         public static string ToString<T>(T value, string nullString)
         {
             Contract.Requires<ArgumentNullException>(nullString != null);
@@ -1401,16 +1371,16 @@ namespace Kirinji.LightWands
 
         public Choice(T1 value1)
         {
-            this.coreChoice = new ChoiceWithEmpty<T1, T2>(value1);
+            coreChoice = new ChoiceWithEmpty<T1, T2>(value1);
         }
 
         public Choice(T2 value2)
         {
-            this.coreChoice = new ChoiceWithEmpty<T1, T2>(value2);
+            coreChoice = new ChoiceWithEmpty<T1, T2>(value2);
         }
 
         [ContractInvariantMethod]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
+        [SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
         private void ObjectInvariant()
         {
             Contract.Invariant(coreChoice != null);
@@ -1469,21 +1439,21 @@ namespace Kirinji.LightWands
 
         public Choice(T1 value1)
         {
-            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3>(value1);
+            coreChoice = new ChoiceWithEmpty<T1, T2, T3>(value1);
         }
 
         public Choice(T2 value2)
         {
-            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3>(value2);
+            coreChoice = new ChoiceWithEmpty<T1, T2, T3>(value2);
         }
 
         public Choice(T3 value3)
         {
-            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3>(value3);
+            coreChoice = new ChoiceWithEmpty<T1, T2, T3>(value3);
         }
 
         [ContractInvariantMethod]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
+        [SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
         private void ObjectInvariant()
         {
             Contract.Invariant(coreChoice != null);
@@ -1543,26 +1513,26 @@ namespace Kirinji.LightWands
 
         public Choice(T1 value1)
         {
-            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3, T4>(value1);
+            coreChoice = new ChoiceWithEmpty<T1, T2, T3, T4>(value1);
         }
 
         public Choice(T2 value2)
         {
-            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3, T4>(value2);
+            coreChoice = new ChoiceWithEmpty<T1, T2, T3, T4>(value2);
         }
 
         public Choice(T3 value3)
         {
-            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3, T4>(value3);
+            coreChoice = new ChoiceWithEmpty<T1, T2, T3, T4>(value3);
         }
 
         public Choice(T4 value4)
         {
-            this.coreChoice = new ChoiceWithEmpty<T1, T2, T3, T4>(value4);
+            coreChoice = new ChoiceWithEmpty<T1, T2, T3, T4>(value4);
         }
 
         [ContractInvariantMethod]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
+        [SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
         private void ObjectInvariant()
         {
             Contract.Invariant(coreChoice != null);
@@ -1642,13 +1612,13 @@ namespace Kirinji.LightWands
         public ChoiceWithEmpty(T1 value1)
         {
             this.value1 = value1;
-            this.valueIndex = 0;
+            valueIndex = 0;
         }
 
         public ChoiceWithEmpty(T2 value2)
         {
             this.value2 = value2;
-            this.valueIndex = 1;
+            valueIndex = 1;
         }
 
         public T Match<T>(Func<T1, T> convert1, Func<T2, T> convert2, Func<T> convertEmpty)
@@ -1747,19 +1717,19 @@ namespace Kirinji.LightWands
         public ChoiceWithEmpty(T1 value1)
         {
             this.value1 = value1;
-            this.valueIndex = 0;
+            valueIndex = 0;
         }
 
         public ChoiceWithEmpty(T2 value2)
         {
             this.value2 = value2;
-            this.valueIndex = 1;
+            valueIndex = 1;
         }
 
         public ChoiceWithEmpty(T3 value3)
         {
             this.value3 = value3;
-            this.valueIndex = 2;
+            valueIndex = 2;
         }
 
         public T Match<T>(Func<T1, T> convert1, Func<T2, T> convert2, Func<T3, T> convert3, Func<T> convertEmpty)
@@ -1869,25 +1839,25 @@ namespace Kirinji.LightWands
         public ChoiceWithEmpty(T1 value1)
         {
             this.value1 = value1;
-            this.valueIndex = 0;
+            valueIndex = 0;
         }
 
         public ChoiceWithEmpty(T2 value2)
         {
             this.value2 = value2;
-            this.valueIndex = 1;
+            valueIndex = 1;
         }
 
         public ChoiceWithEmpty(T3 value3)
         {
             this.value3 = value3;
-            this.valueIndex = 2;
+            valueIndex = 2;
         }
 
         public ChoiceWithEmpty(T4 value4)
         {
             this.value4 = value4;
-            this.valueIndex = 3;
+            valueIndex = 3;
         }
 
         public T Match<T>(Func<T1, T> convert1, Func<T2, T> convert2, Func<T3, T> convert3, Func<T4, T> convert4, Func<T> convertEmpty)
@@ -1999,7 +1969,7 @@ namespace Kirinji.LightWands
         {
             if (x == null && y == null) return true;
             if (x == null || y == null) return false;
-            return Object.Equals(x.AsObject(), y.AsObject());
+            return Equals(x.AsObject(), y.AsObject());
         }
 
         public static bool Equals(IChoice x, object y)
@@ -2009,7 +1979,7 @@ namespace Kirinji.LightWands
             var ichoice = y as IChoice;
             if (ichoice != null) return Equals(x, ichoice);
 
-            return Object.Equals(x.AsObject(), y);
+            return Equals(x.AsObject(), y);
         }
     }
 
@@ -2086,10 +2056,7 @@ namespace Kirinji.LightWands
             {
                 return value;
             }
-            else
-            {
-                return default(TValue);
-            }
+            return default(TValue);
         }
     }
 
@@ -2204,7 +2171,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static partial class ObservableEx
+    static class ObservableEx
     {
         public static IObservable<T> Empty<T>()
         {
@@ -2238,7 +2205,7 @@ namespace Kirinji.LightWands
         {
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
 
-            var returnObservable = Observable.Return<T>(value);
+            var returnObservable = Observable.Return(value);
             Contract.Assert(returnObservable != null);
             return returnObservable;
         }
@@ -2248,7 +2215,7 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(scheduler != null);
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
 
-            var returnObservable = Observable.Return<T>(value, scheduler);
+            var returnObservable = Observable.Return(value, scheduler);
             Contract.Assert(returnObservable != null);
             return returnObservable;
         }
@@ -2264,7 +2231,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static partial class ObservableExtensions
+    static class ObservableExtensions
     {
         public static T MostRecentValue<T>(this IObservable<T> source)
         {
@@ -2417,8 +2384,8 @@ namespace Kirinji.LightWands
             Contract.Ensures(Contract.Result<IObservable<IValueOrError<TValue, TException>>>() != null);
 
             var value = source
-                .Select(v => ValueOrError.CreateValue<TValue, TException>(v)) // Catch では射影できないので、まずここで通常の値を変換
-                .Catch((TException ex) => Observable.Return(ValueOrError.CreateError<TValue, TException>(ex))); // そしてここでエラーを変換
+                    .Select(ValueOrError.CreateValue<TValue, TException>)
+                    .Catch((TException ex) => Observable.Return(ValueOrError.CreateError<TValue, TException>(ex))); // そしてここでエラーを変換
             Contract.Assert(value != null);
             return value;
         }
@@ -2476,11 +2443,11 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
 
-            Action<IObserver<T>, T, int> actualOnNextSelector = onNextSelector ?? ((observer, x, i) => observer.OnNext(x));
-            Action<Exception, IObserver<T>> actualOnErrorSelector = onErrorSelector ?? ((error, observer) => observer.OnError(error));
-            Action<IObserver<T>> actualOnCompletedSelector = onCompletedSelector ?? ((observer) => observer.OnCompleted());
+            var actualOnNextSelector = onNextSelector ?? ((observer, x, i) => observer.OnNext(x));
+            var actualOnErrorSelector = onErrorSelector ?? ((error, observer) => observer.OnError(error));
+            var actualOnCompletedSelector = onCompletedSelector ?? (observer => observer.OnCompleted());
 
-            int itemsCount = 0;
+            var itemsCount = 0;
             return Observable.Create<T>(observer =>
             {
                 return source.Subscribe(x =>
@@ -2530,11 +2497,13 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<SelectorResult<T>>() != null);
 
-            var r = new SelectorResult<T>();
-            r.Kind = NotificationKind.OnNext;
-            r.Value = value;
-            r.Source = source;
-            r.SourceIndex = sourceIndex;
+            var r = new SelectorResult<T>
+            {
+                Kind = NotificationKind.OnNext,
+                Value = value,
+                Source = source,
+                SourceIndex = sourceIndex
+            };
             return r;
         }
 
@@ -2543,11 +2512,13 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<SelectorResult<T>>() != null);
 
-            var r = new SelectorResult<T>();
-            r.Kind = NotificationKind.OnError;
-            r.Exception = exception;
-            r.Source = source;
-            r.SourceIndex = sourceIndex;
+            var r = new SelectorResult<T>
+            {
+                Kind = NotificationKind.OnError,
+                Exception = exception,
+                Source = source,
+                SourceIndex = sourceIndex
+            };
             return r;
         }
 
@@ -2575,7 +2546,7 @@ namespace Kirinji.LightWands
 
     #region ValueOrError
 
-    [ContractClass(typeof(IValueOrErrorContract<,>))]
+    [ContractClass(typeof(ValueOrErrorContract<,>))]
 #if USE_INTERNAL
     internal
 #else
@@ -2589,7 +2560,7 @@ namespace Kirinji.LightWands
     }
 
     [ContractClassFor(typeof(IValueOrError<,>))]
-    abstract class IValueOrErrorContract<TValue, TException> : IValueOrError<TValue, TException> where TException : Exception
+    abstract class ValueOrErrorContract<TValue, TException> : IValueOrError<TValue, TException> where TException : Exception
     {
         public bool IsError
         {
@@ -2664,15 +2635,15 @@ namespace Kirinji.LightWands
     {
         public ValueOrError(TValue value)
         {
-            this.Value = value;
+            Value = value;
         }
 
         public ValueOrError(TException error)
         {
             Contract.Requires<ArgumentNullException>(error != null);
 
-            this.IsError = true;
-            this.Error = error;
+            IsError = true;
+            Error = error;
         }
 
         public bool IsError { get; private set; }
@@ -2687,10 +2658,7 @@ namespace Kirinji.LightWands
             {
                 return new Choice<TValue, TException>(Error);
             }
-            else
-            {
-                return new Choice<TValue, TException>(Value);
-            }
+            return new Choice<TValue, TException>(Value);
         }
 
         public override bool Equals(object obj)
@@ -2702,31 +2670,25 @@ namespace Kirinji.LightWands
 
         public override int GetHashCode()
         {
-            if (this.IsError)
+            if (IsError)
             {
-                return this.Error.GetHashCode();
+                return Error.GetHashCode();
             }
-            else
-            {
-                return this.Value == null ? 0 : this.Value.GetHashCode();
-            }
+            return Value == null ? 0 : Value.GetHashCode();
         }
 
         public bool Equals(ValueOrError<TValue, TException> other)
         {
             if (other == null) return false;
-            if (this.IsError && other.IsError)
+            if (IsError && other.IsError)
             {
-                return Object.Equals(this.Error, other.Error);
+                return Equals(Error, other.Error);
             }
-            else if (!this.IsError && !other.IsError)
+            if (!IsError && !other.IsError)
             {
-                return Object.Equals(this.Value, other.Value);
+                return Equals(Value, other.Value);
             }
-            else
-            {
-                return false;
-            }
+            return false;
         }
     }
 
@@ -2762,39 +2724,39 @@ namespace Kirinji.LightWands
 #endif
     class CashedReplaySubject<T> : ISubject<T>, IDisposable
     {
-        IList<Tuple<ItemType, T, Exception>> m_cache;
-        IScheduler m_scheduler;
-        readonly Subject<T> m_source = new Subject<T>();
-        bool m_isCompleted;
+        IList<Tuple<ItemType, T, Exception>> cache;
+        readonly IScheduler scheduler;
+        readonly Subject<T> source = new Subject<T>();
+        bool isCompleted;
 
         [ContractInvariantMethod]
         private void ObjectInvariant()
         {
-            Contract.Invariant(this.m_cache != null);
-            Contract.Invariant(this.m_source != null);
+            Contract.Invariant(cache != null);
+            Contract.Invariant(source != null);
         }
 
         public CashedReplaySubject(IScheduler scheduler = null)
         {
-            this.m_cache = new List<Tuple<ItemType, T, Exception>>();
-            this.m_scheduler = scheduler;
+            cache = new List<Tuple<ItemType, T, Exception>>();
+            this.scheduler = scheduler;
         }
 
         public CashedReplaySubject(int bufferSize, IScheduler scheduler = null)
         {
-            this.m_cache = new List<Tuple<ItemType, T, Exception>>(bufferSize);
-            this.m_scheduler = scheduler;
+            cache = new List<Tuple<ItemType, T, Exception>>(bufferSize);
+            this.scheduler = scheduler;
         }
 
         public void OnCompleted()
         {
             ThrowExceptionIfDisposed();
 
-            if (!this.m_isCompleted)
+            if (!isCompleted)
             {
-                this.m_isCompleted = true;
-                this.m_source.OnCompleted();
-                this.m_cache = null;
+                isCompleted = true;
+                source.OnCompleted();
+                cache = null;
             }
         }
 
@@ -2802,10 +2764,10 @@ namespace Kirinji.LightWands
         {
             ThrowExceptionIfDisposed();
 
-            if (!this.m_isCompleted)
+            if (!isCompleted)
             {
-                this.m_source.OnError(error);
-                this.m_cache.Add(new Tuple<ItemType, T, Exception>(ItemType.OnErrorValue, default(T), error));
+                source.OnError(error);
+                cache.Add(new Tuple<ItemType, T, Exception>(ItemType.OnErrorValue, default(T), error));
             }
         }
 
@@ -2813,10 +2775,10 @@ namespace Kirinji.LightWands
         {
             ThrowExceptionIfDisposed();
 
-            if (!this.m_isCompleted)
+            if (!isCompleted)
             {
-                this.m_source.OnNext(value);
-                this.m_cache.Add(new Tuple<ItemType, T, Exception>(ItemType.OnNextValue, value, null));
+                source.OnNext(value);
+                cache.Add(new Tuple<ItemType, T, Exception>(ItemType.OnNextValue, value, null));
             }
         }
 
@@ -2824,23 +2786,15 @@ namespace Kirinji.LightWands
         {
             ThrowExceptionIfDisposed();
 
-            return Observable.Merge(this.ReplayCache(), this.m_source).Subscribe(observer);
+            return ReplayCache().Merge(source).Subscribe(observer);
         }
 
         public IObservable<T> ReplayCache()
         {
             ThrowExceptionIfDisposed();
 
-            ReplaySubject<T> returnSubject;
-            if (this.m_scheduler != null)
-            {
-                returnSubject = new System.Reactive.Subjects.ReplaySubject<T>(this.m_scheduler);
-            }
-            else
-            {
-                returnSubject = new System.Reactive.Subjects.ReplaySubject<T>();
-            }
-            foreach (var t in this.m_cache)
+            var returnSubject = scheduler != null ? new ReplaySubject<T>(scheduler) : new ReplaySubject<T>();
+            foreach (var t in cache)
             {
                 switch (t.Item1)
                 {
@@ -2859,7 +2813,7 @@ namespace Kirinji.LightWands
         enum ItemType
         {
             OnNextValue = 0,
-            OnErrorValue = 1,
+            OnErrorValue = 1
         }
 
         #region IDispose implementation
@@ -2899,7 +2853,7 @@ namespace Kirinji.LightWands
 
         protected virtual void OnDisposingManagedResources()
         {
-            m_source.Dispose();
+            source.Dispose();
         }
 
         protected virtual void OnDisposingUnManagedResources()
@@ -2935,39 +2889,39 @@ namespace Kirinji.LightWands
 
         public ObservableDictionary()
         {
-            this.readOnlyKeys = this.keys.ToReadOnly();
-            this.readOnlyValues = this.values.ToReadOnly();
-            this.readOnlyKeyValuePairs = this.keyValuePairs.ToReadOnly();
+            readOnlyKeys = keys.ToReadOnly();
+            readOnlyValues = values.ToReadOnly();
+            readOnlyKeyValuePairs = keyValuePairs.ToReadOnly();
         }
 
         [ContractInvariantMethod]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
+        [SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
         private void ObjectInvariant()
         {
-            Contract.Invariant(this.keys != null);
-            Contract.Invariant(this.values != null);
-            Contract.Invariant(this.keyValuePairs != null);
-            Contract.Invariant(this.readOnlyKeys != null);
-            Contract.Invariant(this.readOnlyValues != null);
-            Contract.Invariant(this.readOnlyKeyValuePairs != null);
+            Contract.Invariant(keys != null);
+            Contract.Invariant(values != null);
+            Contract.Invariant(keyValuePairs != null);
+            Contract.Invariant(readOnlyKeys != null);
+            Contract.Invariant(readOnlyValues != null);
+            Contract.Invariant(readOnlyKeyValuePairs != null);
 
             // 6つのコレクションの個数は常に全部等しい
-            Contract.Invariant(this.keys.Count == this.values.Count && this.values.Count == this.keyValuePairs.Count);
-            Contract.Invariant(this.readOnlyKeys.Count == this.readOnlyValues.Count && this.readOnlyValues.Count == this.readOnlyKeyValuePairs.Count);
-            Contract.Invariant(this.keyValuePairs.Count == this.readOnlyKeyValuePairs.Count);
+            Contract.Invariant(keys.Count == values.Count && values.Count == keyValuePairs.Count);
+            Contract.Invariant(readOnlyKeys.Count == readOnlyValues.Count && readOnlyValues.Count == readOnlyKeyValuePairs.Count);
+            Contract.Invariant(keyValuePairs.Count == readOnlyKeyValuePairs.Count);
         }
 
         public void Add(TKey key, TValue value)
         {
             if (ContainsKey(key)) throw new ArgumentException();
-            this.keys.Add(key);
-            this.values.Add(value);
-            this.keyValuePairs.Add(new KeyValuePair<TKey, TValue>(key, value));
+            keys.Add(key);
+            values.Add(value);
+            keyValuePairs.Add(new KeyValuePair<TKey, TValue>(key, value));
         }
 
         public bool ContainsKey(TKey key)
         {
-            return this.keys.Contains(key);
+            return keys.Contains(key);
         }
 
         public ReadOnlyObservableCollection<TKey> Keys
@@ -2976,7 +2930,7 @@ namespace Kirinji.LightWands
             {
                 Contract.Ensures(Contract.Result<ReadOnlyObservableCollection<TKey>>() != null);
 
-                return this.readOnlyKeys;
+                return readOnlyKeys;
             }
         }
 
@@ -2984,31 +2938,31 @@ namespace Kirinji.LightWands
         {
             get
             {
-                return this.Keys;
+                return Keys;
             }
         }
 
         public bool Remove(TKey key)
         {
-            var index = this.keys.IndexOf(key);
+            var index = keys.IndexOf(key);
             if (index == -1) return false;
-            this.keys.RemoveAt(index);
-            this.values.RemoveAt(index);
-            this.keyValuePairs.RemoveAt(index);
-            Contract.Assume(this.keyValuePairs.Count == this.readOnlyKeyValuePairs.Count);
+            keys.RemoveAt(index);
+            values.RemoveAt(index);
+            keyValuePairs.RemoveAt(index);
+            Contract.Assume(keyValuePairs.Count == readOnlyKeyValuePairs.Count);
             return true;
         }
 
         public bool TryGetValue(TKey key, out TValue value)
         {
-            var index = this.keys.IndexOf(key);
+            var index = keys.IndexOf(key);
             if (index <= -1)
             {
                 value = default(TValue);
                 Contract.Assume(!ContainsKey(key));
                 return false;
             }
-            value = this.values[index];
+            value = values[index];
             Contract.Assume(ContainsKey(key));
             return true;
         }
@@ -3019,7 +2973,7 @@ namespace Kirinji.LightWands
             {
                 Contract.Ensures(Contract.Result<ReadOnlyObservableCollection<TValue>>() != null);
 
-                return this.readOnlyValues;
+                return readOnlyValues;
             }
         }
 
@@ -3027,7 +2981,7 @@ namespace Kirinji.LightWands
         {
             get
             {
-                return this.Values;
+                return Values;
             }
         }
 
@@ -3035,20 +2989,20 @@ namespace Kirinji.LightWands
         {
             get
             {
-                var index = this.keys.IndexOf(key);
+                var index = keys.IndexOf(key);
                 if (index == -1) throw new KeyNotFoundException();
-                return this.values[index];
+                return values[index];
             }
             set
             {
-                var index = this.keys.IndexOf(key);
+                var index = keys.IndexOf(key);
                 if (index == -1)
                 {
                     Add(key, value);
                     return;
                 }
-                this.values[index] = value;
-                this.keyValuePairs[index] = new KeyValuePair<TKey, TValue>(this.keys[index], value);
+                values[index] = value;
+                keyValuePairs[index] = new KeyValuePair<TKey, TValue>(keys[index], value);
             }
         }
 
@@ -3058,7 +3012,7 @@ namespace Kirinji.LightWands
             {
                 Contract.Ensures(Contract.Result<ReadOnlyObservableCollection<KeyValuePair<TKey, TValue>>>() != null);
 
-                return this.readOnlyKeyValuePairs;
+                return readOnlyKeyValuePairs;
             }
         }
 
@@ -3069,26 +3023,26 @@ namespace Kirinji.LightWands
 
         public void Clear()
         {
-            this.keys.Clear();
-            this.values.Clear();
-            this.keyValuePairs.Clear();
+            keys.Clear();
+            values.Clear();
+            keyValuePairs.Clear();
         }
 
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
-            return this.keyValuePairs.Contains(item);
+            return keyValuePairs.Contains(item);
         }
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            this.keyValuePairs.CopyTo(array, arrayIndex);
+            keyValuePairs.CopyTo(array, arrayIndex);
         }
 
         public int Count
         {
             get
             {
-                return this.keyValuePairs.Count;
+                return keyValuePairs.Count;
             }
         }
 
@@ -3102,18 +3056,18 @@ namespace Kirinji.LightWands
 
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            var index = this.keyValuePairs.IndexOf(item);
+            var index = keyValuePairs.IndexOf(item);
             if (index == -1) return false;
-            this.keys.RemoveAt(index);
-            this.values.RemoveAt(index);
-            this.keyValuePairs.RemoveAt(index);
-            Contract.Assume(this.keyValuePairs.Count == this.readOnlyKeyValuePairs.Count);
+            keys.RemoveAt(index);
+            values.RemoveAt(index);
+            keyValuePairs.RemoveAt(index);
+            Contract.Assume(keyValuePairs.Count == readOnlyKeyValuePairs.Count);
             return true;
         }
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            return this.keyValuePairs.GetEnumerator();
+            return keyValuePairs.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -3213,7 +3167,7 @@ namespace Kirinji.LightWands.Tests
 #else
     public
 #endif
-    static partial class EnumerableExtensions
+    static class EnumerableExtensions
     {
         public static void IsSequenceEqual<T>(this IEnumerable<T> source, params T[] second)
         {
@@ -3268,7 +3222,7 @@ namespace Kirinji.LightWands.Tests
 #else
     public
 #endif
-    static partial class ObservableExtensions
+    static class ObservableExtensions
     {
         /// <summary>Starts subscribing and cache pushed values.</summary>
         public static History<T> SubscribeHistory<T>(this IObservable<T> source)
@@ -3290,7 +3244,7 @@ namespace Kirinji.LightWands.Tests
         /// <summary>Creates instance and starts subscribing.</summary>
         public History(IObservable<T> observable)
         {
-            if (observable == null) throw new ArgumentNullException("IObservable<T> is null.");
+            if (observable == null) throw new ArgumentNullException("observable");
             observable
                 .Synchronize()
                 .Subscribe(
@@ -3305,7 +3259,7 @@ namespace Kirinji.LightWands.Tests
         {
             get
             {
-                return this.notifications
+                return notifications
                     .Where(n => n.Kind == NotificationKind.OnNext)
                     .Select(n => n.Value)
                     .ToArray();
@@ -3317,7 +3271,7 @@ namespace Kirinji.LightWands.Tests
         {
             get
             {
-                return this.notifications
+                return notifications
                     .Where(n => n.Kind == NotificationKind.OnError)
                     .Select(n => n.Exception)
                     .ToArray();
@@ -3338,24 +3292,24 @@ namespace Kirinji.LightWands.Tests
         {
             get
             {
-                return this.notifications
+                return notifications
                     .Any(n => n.Kind == NotificationKind.OnCompleted);
             }
         }
 
         public void Clear()
         {
-            this.notifications.Clear();
+            notifications.Clear();
         }
 
         [Obsolete]
         public IEnumerator<Notification<T>> GetEnumerator()
         {
-            return this.notifications.GetEnumerator();
+            return notifications.GetEnumerator();
         }
 
         [Obsolete]
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }
@@ -3371,14 +3325,14 @@ namespace Kirinji.LightWands.Tests
 #else
     public
 #endif
-    static class PrivateObjectExtensions
+        static class PrivateObjectExtensions
     {
         public static object Invoke<T>(this PrivateObject source, string name, T param)
         {
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(name != null);
 
-            return source.Invoke(name, new Type[] { typeof(T) }, new object[] { param });
+            return source.Invoke(name, new[] {typeof (T)}, new object[] {param});
         }
 
         public static object Invoke<T1, T2>(this PrivateObject source, string name, T1 param1, T2 param2)
@@ -3386,7 +3340,7 @@ namespace Kirinji.LightWands.Tests
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(name != null);
 
-            return source.Invoke(name, new Type[] { typeof(T1), typeof(T2) }, new object[] { param1, param2 });
+            return source.Invoke(name, new[] {typeof (T1), typeof (T2)}, new object[] {param1, param2});
         }
 
         public static object Invoke<T1, T2, T3>(this PrivateObject source, string name, T1 param1, T2 param2, T3 param3)
@@ -3394,31 +3348,39 @@ namespace Kirinji.LightWands.Tests
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(name != null);
 
-            return source.Invoke(name, new Type[] { typeof(T1), typeof(T2), typeof(T3) }, new object[] { param1, param2, param3 });
+            return source.Invoke(name, new[] {typeof (T1), typeof (T2), typeof (T3)},
+                new object[] {param1, param2, param3});
         }
 
-        public static object Invoke<T1, T2, T3, T4>(this PrivateObject source, string name, T1 param1, T2 param2, T3 param3, T4 param4)
+        public static object Invoke<T1, T2, T3, T4>(this PrivateObject source, string name, T1 param1, T2 param2,
+            T3 param3, T4 param4)
         {
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(name != null);
 
-            return source.Invoke(name, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4) }, new object[] { param1, param2, param3, param4 });
+            return source.Invoke(name, new[] {typeof (T1), typeof (T2), typeof (T3), typeof (T4)},
+                new object[] {param1, param2, param3, param4});
         }
 
-        public static object Invoke<T1, T2, T3, T4, T5>(this PrivateObject source, string name, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        public static object Invoke<T1, T2, T3, T4, T5>(this PrivateObject source, string name, T1 param1, T2 param2,
+            T3 param3, T4 param4, T5 param5)
         {
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(name != null);
 
-            return source.Invoke(name, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5) }, new object[] { param1, param2, param3, param4, param5 });
+            return source.Invoke(name, new[] {typeof (T1), typeof (T2), typeof (T3), typeof (T4), typeof (T5)},
+                new object[] {param1, param2, param3, param4, param5});
         }
 
-        public static object Invoke<T1, T2, T3, T4, T5, T6>(this PrivateObject source, string name, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        public static object Invoke<T1, T2, T3, T4, T5, T6>(this PrivateObject source, string name, T1 param1, T2 param2,
+            T3 param3, T4 param4, T5 param5, T6 param6)
         {
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(name != null);
 
-            return source.Invoke(name, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6) }, new object[] { param1, param2, param3, param4, param5, param6 });
+            return source.Invoke(name,
+                new[] {typeof (T1), typeof (T2), typeof (T3), typeof (T4), typeof (T5), typeof (T6)},
+                new object[] {param1, param2, param3, param4, param5, param6});
         }
     }
 
