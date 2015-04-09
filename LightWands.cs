@@ -1402,6 +1402,11 @@ namespace Kirinji.LightWands
             return Match<object>(x => x, x => x);
         }
 
+        public ChoiceWithEmpty<T1, T2> ToWithEmpty()
+        {
+            return Match(x => new ChoiceWithEmpty<T1, T2>(x), x => new ChoiceWithEmpty<T1, T2>(x));
+        }
+
         public override bool Equals(object obj)
         {
             return Choice.Equals(this, obj);
@@ -1473,6 +1478,14 @@ namespace Kirinji.LightWands
         public object AsObject()
         {
             return Match<object>(x => x, x => x, x => x);
+        }
+
+        public ChoiceWithEmpty<T1, T2, T3> ToWithEmpty()
+        {
+            return Match(
+                x => new ChoiceWithEmpty<T1, T2, T3>(x),
+                x => new ChoiceWithEmpty<T1, T2, T3>(x),
+                x => new ChoiceWithEmpty<T1, T2, T3>(x));
         }
 
         public override bool Equals(object obj)
@@ -1552,6 +1565,15 @@ namespace Kirinji.LightWands
         public object AsObject()
         {
             return Match<object>(x => x, x => x, x => x, x => x);
+        }
+
+        public ChoiceWithEmpty<T1, T2, T3, T4> ToWithEmpty()
+        {
+            return Match(
+                x => new ChoiceWithEmpty<T1, T2, T3, T4>(x),
+                x => new ChoiceWithEmpty<T1, T2, T3, T4>(x),
+                x => new ChoiceWithEmpty<T1, T2, T3, T4>(x),
+                x => new ChoiceWithEmpty<T1, T2, T3, T4>(x));
         }
 
         public override bool Equals(object obj)
