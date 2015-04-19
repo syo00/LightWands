@@ -1,6 +1,6 @@
 ﻿//-----------------------------------------------------------------------
 // <copyright file="LightWands.cs">
-//    Copyright (c) 2013-2013, syo00.
+//    Copyright (c) 2013-2015, syo00.
 //
 //    Licensed under the MIT License (the "License");
 //    you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 //-----------------------------------------------------------------------
 
 
-// VERSION: 0.8.1
+// VERSION: 0.8.2
 
 
 /***** public or internal *****/
