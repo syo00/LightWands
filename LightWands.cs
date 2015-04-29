@@ -2011,7 +2011,13 @@ namespace Kirinji.LightWands
 
 
 #if NET40_SL5_WINRT45_WP8
-    public struct Unit : IEquatable<Unit>
+    
+#if USE_INTERNAL
+    internal
+#else
+    public
+#endif
+    struct Unit : IEquatable<Unit>
     {
         public static Unit Default
         {
