@@ -17,7 +17,7 @@
 //-----------------------------------------------------------------------
 
 
-// VERSION: 0.8.2
+// VERSION: 0.8.3
 
 
 /***** public or internal *****/
@@ -51,6 +51,11 @@
 //#define USE_CHOICE_IMPLICIT
 
 
+/***** use Code Contracts *****/
+// NOTE: uncomment the following line to use Code Contracts.
+//#define USE_CODECONTRACTS
+
+
 
 #if TESTS
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -60,7 +65,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -75,7 +79,9 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
 #endif
-
+#if USE_CODECONTRACTS
+using System.Diagnostics.Contracts;
+#endif
 
 namespace Kirinji.LightWands
 {
@@ -88,7 +94,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-        static class Disposable
+ static class Disposable
     {
         public static bool TryDisposeAndRelease<T>(ref T disposingValue) where T : class
         {
@@ -118,7 +124,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static class EnumerableEx
+ static class EnumerableEx
     {
         public static IEnumerable<T> Empty<T>()
         {
@@ -141,12 +147,17 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static class CollectionExtensions
+ static class CollectionExtensions
     {
         public static void AddRange<T>(this ICollection<T> source, IEnumerable<T> collection)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(collection != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (collection == null) throw new ArgumentNullException("collection");
+#endif
 
             foreach (var r in collection) source.Add(r);
         }
@@ -162,13 +173,18 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static partial class DictionaryExtensions
+ static partial class DictionaryExtensions
     {
         public static IEnumerable<TKey> RemoveAll<TKey, TValue>(this IDictionary<TKey, TValue> source, Func<TKey, bool> predicate)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
             Contract.Ensures(Contract.Result<IEnumerable<TKey>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+#endif
 
             var removingKeys = source.Where(pair => predicate(pair.Key)).Select(pair => pair.Key).ToList();
 
@@ -182,7 +198,11 @@ namespace Kirinji.LightWands
 
         public static TValue ValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> source, TKey key)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             TValue value;
             if (source.TryGetValue(key, out value))
@@ -203,12 +223,17 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static class EnumerableExtensions
+ static class EnumerableExtensions
     {
         public static IEnumerable<T> Do<T>(this IEnumerable<T> source, Action<T> action)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(action != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (action == null) throw new ArgumentNullException("action");
+#endif
 
             foreach (var item in source)
             {
@@ -219,8 +244,13 @@ namespace Kirinji.LightWands
 
         public static IEnumerable<T> Do<T>(this IEnumerable<T> source, Action<T, int> action)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(action != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (action == null) throw new ArgumentNullException("action");
+#endif
 
             int index = 0;
             foreach (var item in source)
@@ -233,8 +263,13 @@ namespace Kirinji.LightWands
 
         public static IEnumerable<T> DoWhenDebug<T>(this IEnumerable<T> source, Action<T> action)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(action != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (action == null) throw new ArgumentNullException("action");
+#endif
 
 #if DEBUG
             return source.Do(action);
@@ -245,16 +280,26 @@ namespace Kirinji.LightWands
 
         public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(action != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (action == null) throw new ArgumentNullException("action");
+#endif
 
             foreach (var item in source) action(item);
         }
 
         public static void ForEach<T>(this IEnumerable<T> source, Action<T, int> action)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(action != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (action == null) throw new ArgumentNullException("action");
+#endif
 
             int index = 0;
             foreach (var item in source)
@@ -266,8 +311,13 @@ namespace Kirinji.LightWands
 
         public static async Task ForEachAsync<T>(this IEnumerable<T> source, Func<T, Task> actionAsync)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(actionAsync != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (actionAsync == null) throw new ArgumentNullException("actionAsync");
+#endif
 
             foreach (var item in source)
             {
@@ -277,8 +327,13 @@ namespace Kirinji.LightWands
 
         public static async Task ForEachAsync<T>(this IEnumerable<T> source, Func<T, int, Task> actionAsync)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(actionAsync != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (actionAsync == null) throw new ArgumentNullException("actionAsync");
+#endif
 
             int index = 0;
             foreach (var item in source)
@@ -290,15 +345,23 @@ namespace Kirinji.LightWands
 
         public static IEnumerable<T> Hide<T>(this IEnumerable<T> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             foreach (var s in source) yield return s;
         }
 
         public static IDictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IDictionary<TKey, TValue>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             return source.ToDictionary(pair => pair.Key, pair => pair.Value);
         }
@@ -312,8 +375,13 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static int? FirstIndex<T>(this IEnumerable<T> source, Func<T, bool> predicate)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+#endif
 
             var loopCount = 0;
             foreach (var s in source)
@@ -334,8 +402,13 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static int? LastIndex<T>(this IEnumerable<T> source, Func<T, bool> predicate)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+#endif
 
             var sourceList = source.ToReadOnlyList();
 
@@ -355,8 +428,13 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static int? SingleIndex<T>(this IEnumerable<T> source, Func<T, bool> predicate)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+#endif
 
             var sourceList = source.ToReadOnlyList();
 
@@ -380,12 +458,17 @@ namespace Kirinji.LightWands
 
         public static IEnumerable<int> WhereIndexes<T>(this IEnumerable<T> source, Func<T, bool> predicate)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+#endif
 
             List<int> matchedIndexes = new List<int>();
             var loopCount = 0;
-            foreach(var s in source)
+            foreach (var s in source)
             {
                 if (predicate(s)) matchedIndexes.Add(loopCount);
 
@@ -403,7 +486,11 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static T? ElementAtOrNull<T>(this IEnumerable<T> source, int index) where T : struct
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var sourceList = source.ToReadOnlyList();
             if (sourceList.Count - 1 >= index)
@@ -421,7 +508,11 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static T? FirstOrNull<T>(this IEnumerable<T> source) where T : struct
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             foreach (var s in source)
             {
@@ -440,8 +531,13 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static T? FirstOrNull<T>(this IEnumerable<T> source, Func<T, bool> predicate) where T : struct
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+#endif
 
             var sourceList = source.ToReadOnlyList();
             int? index = FirstIndex(sourceList, predicate);
@@ -460,7 +556,11 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static T? LastOrNull<T>(this IEnumerable<T> source) where T : struct
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var sourceList = source.ToReadOnlyList();
             if (sourceList.Count != 0)
@@ -479,8 +579,13 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static T? LastOrNull<T>(this IEnumerable<T> source, Func<T, bool> predicate) where T : struct
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+#endif
 
             var sourceList = source.ToReadOnlyList();
             int? index = LastIndex(sourceList, predicate);
@@ -503,8 +608,13 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static T? SingleOrNull<T>(this IEnumerable<T> source, Func<T, bool> predicate) where T : struct
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+#endif
 
             var sourceList = source.ToReadOnlyList();
             int? index = SingleIndex(sourceList, predicate);
@@ -517,8 +627,12 @@ namespace Kirinji.LightWands
 
         public static IEnumerable<KeyValuePair<int, T>> Indexes<T>(this IEnumerable<T> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IEnumerable<KeyValuePair<int, T>>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             int count = 0;
             foreach (var e in source)
@@ -530,16 +644,26 @@ namespace Kirinji.LightWands
 
         public static IEnumerable<T> Concat<T>(this IEnumerable<T> source, params T[] second)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(second != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (second == null) throw new ArgumentNullException("second");
+#endif
 
             return source.Concat(second.AsEnumerable());
         }
 
         public static bool NonSequenceEqual<T>(this IEnumerable<T> source, IEnumerable<T> second)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(second != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (second == null) throw new ArgumentNullException("second");
+#endif
 
             Func<T, T, bool> comparer = EqualityComparer<T>.Default.Equals;
             var sourceList = source.ToList();
@@ -552,9 +676,15 @@ namespace Kirinji.LightWands
 
         public static bool NonSequenceEqual<T>(this IEnumerable<T> source, IEnumerable<T> second, Func<T, T, bool> comparer)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(second != null);
             Contract.Requires<ArgumentNullException>(comparer != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (second == null) throw new ArgumentNullException("second");
+            if (comparer == null) throw new ArgumentNullException("comparer");
+#endif
 
             var sourceList = source.ToList();
             foreach (var sec in second)
@@ -567,8 +697,12 @@ namespace Kirinji.LightWands
         // ToDo: もっと色んな所で使えるようにしてこれに置き換えたい
         private static IList<T> ToReadOnlyList<T>(this IEnumerable<T> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IList<T>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var casted = source as IList<T>;
             if (casted != null)
@@ -590,12 +724,17 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static partial class ListExtensions
+ static partial class ListExtensions
     {
         public static bool RemoveFirst<T>(this IList<T> source, Func<T, bool> predicate)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+#endif
 
             int? firstIndex = source.FirstIndex(predicate);
             if (firstIndex.HasValue)
@@ -608,7 +747,11 @@ namespace Kirinji.LightWands
 
         public static bool RemoveFirst<T>(this IList<T> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             if (source.Count == 0)
                 return false;
@@ -618,7 +761,11 @@ namespace Kirinji.LightWands
 
         public static bool RemoveLast<T>(this IList<T> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             if (source.Count == 0)
                 return false;
@@ -628,8 +775,13 @@ namespace Kirinji.LightWands
 
         public static bool RemoveLast<T>(this IList<T> source, Func<T, bool> predicate)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+#endif
 
             int? lastIndex = source.LastIndex(predicate);
             if (lastIndex.HasValue)
@@ -642,7 +794,11 @@ namespace Kirinji.LightWands
 
         public static IEnumerable<T> RemoveAll<T>(this IList<T> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var removedItems = new List<T>(source);
             source.Clear();
@@ -651,15 +807,24 @@ namespace Kirinji.LightWands
 
         public static IEnumerable<T> RemoveAll<T>(this IList<T> source, T item)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             return source.RemoveAll(t => Equals(t, item));
         }
 
         public static IEnumerable<T> RemoveAll<T>(this IList<T> source, Func<T, bool> predicate)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+#endif
 
             var removedItems = new List<T>();
 
@@ -679,7 +844,11 @@ namespace Kirinji.LightWands
 
         public static T PopFirst<T>(this IList<T> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var firstItem = source.First();
             source.RemoveFirst();
@@ -688,7 +857,11 @@ namespace Kirinji.LightWands
 
         public static IList<T> PopFirst<T>(this IList<T> source, int count)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             if (count <= -1) throw new ArgumentOutOfRangeException();
 
@@ -697,7 +870,11 @@ namespace Kirinji.LightWands
 
         public static T PopLast<T>(this IList<T> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var lastItem = source.Last();
             source.RemoveLast();
@@ -706,8 +883,13 @@ namespace Kirinji.LightWands
 
         public static IList<T> PopLast<T>(this IList<T> source, int count)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentOutOfRangeException>(count >= 0);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (count >= 0) throw new ArgumentOutOfRangeException("count >= 0");
+#endif
 
             var returnList = new List<T>();
 
@@ -732,7 +914,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static class StringExtensions
+ static class StringExtensions
     {
         /// <summary>
         /// 改行も Trim する
@@ -755,7 +937,11 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static string DeleteSpaces(this string s)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(s != null);
+#else
+            if (s == null) throw new ArgumentNullException("s");
+#endif
 
             return s.Replace(" ", "").Replace("\r", "").Replace("\n", "");
         }
@@ -928,7 +1114,11 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static string RegexIgnoreWidth(this string s)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(s != null);
+#else
+            if (s == null) throw new ArgumentNullException("s");
+#endif
 
             var intermediate = WidthDicExcludingRegexSymbols.Aggregate(s, (current, set) => current.Replace(set.Key, set.Value));
             return WidthDicRegexSymbolsToRegexSymbols.Aggregate(intermediate, (current, set) => current.Replace(set.Key, set.Value));
@@ -941,7 +1131,11 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static string StringIgnoreWidth(this string s)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(s != null);
+#else
+            if (s == null) throw new ArgumentNullException("s");
+#endif
 
             var str = s;
 
@@ -1053,7 +1247,11 @@ namespace Kirinji.LightWands
         /// <returns></returns>
         public static string IgnoreKana(this string s)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(s != null);
+#else
+            if (s == null) throw new ArgumentNullException("s");
+#endif
 
             string str = s;
             foreach (var set in KanaDic)
@@ -1160,13 +1358,22 @@ namespace Kirinji.LightWands
         public AnonymousEqualityComparer(Func<T, T, bool> comparerDelegate)
             : this(comparerDelegate, _ => 1)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(comparerDelegate != null);
+#else
+            if (comparerDelegate == null) throw new ArgumentNullException("comparerDelegate");
+#endif
         }
 
         public AnonymousEqualityComparer(Func<T, T, bool> comparerDelegate, Func<T, int> getHashCodeDelegate)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(comparerDelegate != null);
             Contract.Requires<ArgumentNullException>(getHashCodeDelegate != null);
+#else
+            if (comparerDelegate == null) throw new ArgumentNullException("comparerDelegate");
+            if (getHashCodeDelegate == null) throw new ArgumentNullException("getHashCodeDelegate");
+#endif
 
             this.comparerDelegate = comparerDelegate;
             this.getHashCodeDelegate = getHashCodeDelegate;
@@ -1189,20 +1396,29 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-        static class EqualityComparer
+ static class EqualityComparer
     {
         /// <remarks>Not recommended to use this method because GetHashCode always returns same value and it makes programs slow.</remarks>
         public static EqualityComparer<T> Create<T>(Func<T, T, bool> comparer)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(comparer != null);
-            
+#else
+            if (comparer == null) throw new ArgumentNullException("comparer");
+#endif
+
             return new AnonymousEqualityComparer<T>(comparer);
         }
 
         public static EqualityComparer<T> Create<T>(Func<T, T, bool> comparer, Func<T, int> hashCodeCreator)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(comparer != null);
             Contract.Requires<ArgumentNullException>(hashCodeCreator != null);
+#else
+            if (comparer == null) throw new ArgumentNullException("comparer");
+            if (hashCodeCreator == null) throw new ArgumentNullException("hashCodeCreator");
+#endif
 
             return new AnonymousEqualityComparer<T>(comparer, hashCodeCreator);
         }
@@ -1210,7 +1426,11 @@ namespace Kirinji.LightWands
         /// <summary>Creates <c>EqualityComparer&lt;T&gt;</c> by specifying parameters or methods.</summary>
         public static EqualityComparer<T> Create<T>(IEnumerable<Func<T, object>> comparingParameters)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(comparingParameters != null);
+#else
+            if (comparingParameters == null) throw new ArgumentNullException("comparingParameters");
+#endif
 
             Func<T, T, bool> comparer = (x, y) => comparingParameters.All(f => Equals(f(x), f(y)));
             Func<T, int> hashCodeCreator = t => comparingParameters
@@ -1223,7 +1443,11 @@ namespace Kirinji.LightWands
         /// <summary>Creates <c>EqualityComparer&lt;T&gt;</c> by specifying parameters or methods.</summary>
         public static EqualityComparer<T> Create<T>(params Func<T, object>[] comparingParameters)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(comparingParameters != null);
+#else
+            if (comparingParameters == null) throw new ArgumentNullException("comparingParameters");
+#endif
 
             return Create(comparingParameters.AsEnumerable());
         }
@@ -1253,7 +1477,11 @@ namespace Kirinji.LightWands
         /// <summary>Creates <c>EqualityComparer&lt;IEnumerable&lt;T&gt;&gt;</c> to compare the number of each values.</summary>
         public static EqualityComparer<IEnumerable<T>> EnumerableOfUnordered<T>(IComparer<T> comparer)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(comparer != null);
+#else
+            if (comparer == null) throw new ArgumentNullException("comparer");
+#endif
 
             return EnumerableOfInner(true, comparer);
         }
@@ -1261,7 +1489,11 @@ namespace Kirinji.LightWands
         // ignoreOrder = true のとき、順序がバラバラでも要素の個数が合っていれば Equal となる
         private static EqualityComparer<IEnumerable<T>> EnumerableOfInner<T>(bool ignoreOrder, IComparer<T> orderingComparer)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(orderingComparer != null);
+#else
+            if (orderingComparer == null) throw new ArgumentNullException("orderingComparer");
+#endif
 
             Func<IEnumerable<T>, int> hashCodeCreator = e =>
             {
@@ -1309,7 +1541,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static class ObjectEx
+ static class ObjectEx
     {
         /// <summary>Null-safe method for GetHashCode.</summary>
         public static int GetHashCode<T>(T value)
@@ -1321,7 +1553,9 @@ namespace Kirinji.LightWands
         /// <summary>Null-safe method for ToString.</summary>
         public static string ToString<T>(T value)
         {
+#if USE_CODECONTRACTS
             Contract.Ensures(Contract.Result<string>() != null);
+#endif
 
             return ToString(value, "Null");
         }
@@ -1333,8 +1567,12 @@ namespace Kirinji.LightWands
         /// <param name="nullString">Returning string value when value is null.</param>
         public static string ToString<T>(T value, string nullString)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(nullString != null);
             Contract.Ensures(Contract.Result<string>() != null);
+#else
+            if (nullString == null) throw new ArgumentNullException("nullString");
+#endif
 
             if (value == null) return nullString;
             return value.ToString();
@@ -1343,7 +1581,9 @@ namespace Kirinji.LightWands
         /// <summary>Null-safe method for GetType. If value is null, returns typeof(T).</summary>
         public static Type GetType<T>(T value)
         {
+#if USE_CODECONTRACTS
             Contract.Ensures(Contract.Result<Type>() != null);
+#endif
 
             return value == null ? typeof(T) : value.GetType();
         }
@@ -1366,7 +1606,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    sealed class Choice<T1, T2> : IEquatable<IChoice>, IChoice
+ sealed class Choice<T1, T2> : IEquatable<IChoice>, IChoice
     {
         readonly ChoiceWithEmpty<T1, T2> coreChoice;
 
@@ -1380,12 +1620,14 @@ namespace Kirinji.LightWands
             coreChoice = new ChoiceWithEmpty<T1, T2>(value2);
         }
 
+#if USE_CODECONTRACTS
         [ContractInvariantMethod]
         [SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
         private void ObjectInvariant()
         {
             Contract.Invariant(coreChoice != null);
         }
+#endif
 
         public T Match<T>(Func<T1, T> convert1, Func<T2, T> convert2)
         {
@@ -1439,7 +1681,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    sealed class Choice<T1, T2, T3> : IEquatable<IChoice>, IChoice
+ sealed class Choice<T1, T2, T3> : IEquatable<IChoice>, IChoice
     {
         readonly ChoiceWithEmpty<T1, T2, T3> coreChoice;
 
@@ -1458,12 +1700,14 @@ namespace Kirinji.LightWands
             coreChoice = new ChoiceWithEmpty<T1, T2, T3>(value3);
         }
 
+#if USE_CODECONTRACTS
         [ContractInvariantMethod]
         [SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
         private void ObjectInvariant()
         {
             Contract.Invariant(coreChoice != null);
         }
+#endif
 
         public T Match<T>(Func<T1, T> convert1, Func<T2, T> convert2, Func<T3, T> convert3)
         {
@@ -1521,7 +1765,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    sealed class Choice<T1, T2, T3, T4> : IEquatable<IChoice>, IChoice
+ sealed class Choice<T1, T2, T3, T4> : IEquatable<IChoice>, IChoice
     {
         readonly ChoiceWithEmpty<T1, T2, T3, T4> coreChoice;
 
@@ -1545,12 +1789,14 @@ namespace Kirinji.LightWands
             coreChoice = new ChoiceWithEmpty<T1, T2, T3, T4>(value4);
         }
 
+#if USE_CODECONTRACTS
         [ContractInvariantMethod]
         [SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
         private void ObjectInvariant()
         {
             Contract.Invariant(coreChoice != null);
         }
+#endif
 
         public T Match<T>(Func<T1, T> convert1, Func<T2, T> convert2, Func<T3, T> convert3, Func<T4, T> convert4)
         {
@@ -1615,7 +1861,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    sealed class ChoiceWithEmpty<T1, T2> : IEquatable<IChoice>, IChoice
+ sealed class ChoiceWithEmpty<T1, T2> : IEquatable<IChoice>, IChoice
     {
         [DataMember]
         readonly int? valueIndex;
@@ -1717,7 +1963,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    sealed class ChoiceWithEmpty<T1, T2, T3> : IEquatable<IChoice>, IChoice
+ sealed class ChoiceWithEmpty<T1, T2, T3> : IEquatable<IChoice>, IChoice
     {
         [DataMember]
         readonly int? valueIndex;
@@ -1836,7 +2082,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    sealed class ChoiceWithEmpty<T1, T2, T3, T4> : IEquatable<IChoice>, IChoice
+ sealed class ChoiceWithEmpty<T1, T2, T3, T4> : IEquatable<IChoice>, IChoice
     {
         [DataMember]
         readonly int? valueIndex;
@@ -1976,7 +2222,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    interface IChoice
+ interface IChoice
     {
         object AsObject();
     }
@@ -1997,7 +2243,11 @@ namespace Kirinji.LightWands
 
         public static bool Equals(IChoice x, object y)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(x != null);
+#else
+            if (x == null) throw new ArgumentNullException("x");
+#endif
 
             var ichoice = y as IChoice;
             if (ichoice != null) return Equals(x, ichoice);
@@ -2007,7 +2257,7 @@ namespace Kirinji.LightWands
     }
 
 
-#region Unit
+    #region Unit
 
 
 #if NET40_SL5_WINRT45_WP8
@@ -2059,7 +2309,7 @@ namespace Kirinji.LightWands
     }
 #endif
 
-#endregion
+    #endregion
 
     #endregion
 
@@ -2074,11 +2324,15 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static class ReadOnlyDictionaryExtensions
+ static class ReadOnlyDictionaryExtensions
     {
         public static TValue ValueOrDefaultByReadOnly<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> source, TKey key)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             TValue value;
             if (source.TryGetValue(key, out value))
@@ -2099,22 +2353,34 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static class ObservableCollectionExtensions
+ static class ObservableCollectionExtensions
     {
         public static int ReplaceAll<T>(this ObservableCollection<T> source, T newItem, Func<T, bool> predicate)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(newItem != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (newItem == null) throw new ArgumentNullException("newItem");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+#endif
 
             return source.ReplaceAll(t => newItem, predicate);
         }
 
         public static int ReplaceAll<T>(this ObservableCollection<T> source, Func<T, T> newItem, Func<T, bool> predicate)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(newItem != null);
             Contract.Requires<ArgumentNullException>(predicate != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (newItem == null) throw new ArgumentNullException("newItem");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+#endif
 
             int matchedCount = 0;
             for (int i = 0; i <= source.Count - 1; i++)
@@ -2131,15 +2397,24 @@ namespace Kirinji.LightWands
 
         public static ReadOnlyObservableCollection<T> ToReadOnly<T>(this ObservableCollection<T> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             return new ReadOnlyObservableCollection<T>(source);
         }
 
         public static void Update<T>(this ObservableCollection<T> source, IEnumerable<T> updateCollection)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(updateCollection != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (updateCollection == null) throw new ArgumentNullException("updateCollection");
+#endif
 
             source.Update(updateCollection, EqualityComparer<T>.Default);
         }
@@ -2147,9 +2422,15 @@ namespace Kirinji.LightWands
         /// <summary>ObservableCollection の内容をコレクションと比較し、それぞれの要素数を合わせます。順序は保存されません。</summary>
         public static void Update<T>(this ObservableCollection<T> source, IEnumerable<T> updateCollection, IEqualityComparer<T> comparer)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(updateCollection != null);
             Contract.Requires<ArgumentNullException>(comparer != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (updateCollection == null) throw new ArgumentNullException("updateCollection");
+            if (comparer == null) throw new ArgumentNullException("comparer");
+#endif
 
             // updateCollection の数 - source の数
             IDictionary<T, int> 要素の増減量 = new Dictionary<T, int>();
@@ -2195,57 +2476,81 @@ namespace Kirinji.LightWands
 
     #region ObservableEx
 
-    #if USE_INTERNAL
+#if USE_INTERNAL
     internal
 #else
     public
 #endif
-    static class ObservableEx
+ static class ObservableEx
     {
         public static IObservable<T> Empty<T>()
         {
+#if USE_CODECONTRACTS
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+#endif
 
             var emptyObservable = Observable.Empty<T>();
+#if USE_CODECONTRACTS
             Contract.Assert(emptyObservable != null);
+#endif
             return emptyObservable;
         }
 
         public static IObservable<T> Empty<T>(IScheduler scheduler)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(scheduler != null);
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+#else
+            if (scheduler == null) throw new ArgumentNullException("scheduler");
+#endif
 
             var emptyObservable = Observable.Empty<T>(scheduler);
+#if USE_CODECONTRACTS
             Contract.Assert(emptyObservable != null);
+#endif
             return emptyObservable;
         }
 
         public static IObservable<T> Never<T>()
         {
+#if USE_CODECONTRACTS
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+#endif
 
             var neverObservable = Observable.Never<T>();
+#if USE_CODECONTRACTS
             Contract.Assert(neverObservable != null);
+#endif
             return neverObservable;
         }
 
         public static IObservable<T> Return<T>(T value)
         {
+#if USE_CODECONTRACTS
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+#endif
 
             var returnObservable = Observable.Return(value);
+#if USE_CODECONTRACTS
             Contract.Assert(returnObservable != null);
+#endif
             return returnObservable;
         }
 
         public static IObservable<T> Return<T>(T value, IScheduler scheduler)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(scheduler != null);
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+#else
+            if (scheduler == null) throw new ArgumentNullException("scheduler");
+#endif
 
             var returnObservable = Observable.Return(value, scheduler);
+#if USE_CODECONTRACTS
             Contract.Assert(returnObservable != null);
+#endif
             return returnObservable;
         }
     }
@@ -2260,33 +2565,51 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static class ObservableExtensions
+ static class ObservableExtensions
     {
         public static T MostRecentValue<T>(this IObservable<T> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var value = source.MostRecent(default(T)).First();
+#if USE_CODECONTRACTS
             Contract.Assume(value != null);
+#endif
             return value;
         }
 
         public static T MostRecentValue<T>(this IObservable<T> source, T missingValue)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var value = source.MostRecent(missingValue).First();
+#if USE_CODECONTRACTS
             Contract.Assume(value != null);
+#endif
             return value;
         }
 
         /// <summary>Invokes actions when subscriptions count changes 0 to 1 or 1 to 0.</summary>
         public static IObservable<T> OnSubscriptionChanged<T>(this IObservable<T> source, Action onStarted, Action onPaused)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(onStarted != null);
             Contract.Requires<ArgumentNullException>(onPaused != null);
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (onStarted == null) throw new ArgumentNullException("onStarted");
+            if (onPaused == null) throw new ArgumentNullException("onPaused");
+#endif
 
             var refCount = 0;
 
@@ -2303,15 +2626,21 @@ namespace Kirinji.LightWands
                     })
                     .Subscribe(obs);
             });
+#if USE_CODECONTRACTS
             Contract.Assert(value != null);
+#endif
             return value;
         }
 
         /// <summary>Passes values when subscribed.</summary>
         public static IObservable<T> WhenSubscribed<T>(this IObservable<T> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var refCount = 0;
 
@@ -2324,7 +2653,9 @@ namespace Kirinji.LightWands
                     .Where(_ => refCount >= 1)
                     .Subscribe(obs);
             });
+#if USE_CODECONTRACTS
             Contract.Assert(value != null);
+#endif
             return value;
         }
 
@@ -2332,9 +2663,14 @@ namespace Kirinji.LightWands
         /// <remarks>sources should implements IList&gt;T&lt;.</remarks>
         public static IObservable<SelectorResult<T>> Selector<T>(this IObservable<IEnumerable<int>> selector, IEnumerable<IObservable<T>> sources)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(selector != null);
             Contract.Requires<ArgumentNullException>(sources != null);
             Contract.Ensures(Contract.Result<IObservable<SelectorResult<T>>>() != null);
+#else
+            if (selector == null) throw new ArgumentNullException("selector");
+            if (sources == null) throw new ArgumentNullException("sources");
+#endif
 
             CompositeDisposable disposable = new CompositeDisposable();
 
@@ -2364,43 +2700,66 @@ namespace Kirinji.LightWands
                 observer.OnError,
                 observer.OnCompleted);
             });
+#if USE_CODECONTRACTS
             Contract.Assert(value != null);
+#endif
             return value;
         }
 
         public static IObservable<SelectorResult<T>> Selector<T>(this IObservable<IEnumerable<int>> selector, params IObservable<T>[] sources)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(selector != null);
             Contract.Requires<ArgumentNullException>(sources != null);
             Contract.Ensures(Contract.Result<IObservable<SelectorResult<T>>>() != null);
+#else
+            if (selector == null) throw new ArgumentNullException("selector");
+            if (sources == null) throw new ArgumentNullException("sources");
+#endif
 
             return selector.Selector(sources.AsEnumerable());
         }
 
         public static IObservable<SelectorResult<T>> Selector<T>(this IObservable<int> selector, IEnumerable<IObservable<T>> sources)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(selector != null);
             Contract.Requires<ArgumentNullException>(sources != null);
             Contract.Ensures(Contract.Result<IObservable<SelectorResult<T>>>() != null);
+#else
+            if (selector == null) throw new ArgumentNullException("selector");
+            if (sources == null) throw new ArgumentNullException("sources");
+#endif
 
             return selector.Select(i => new[] { i }).Selector(sources);
         }
 
         public static IObservable<SelectorResult<T>> Selector<T>(this IObservable<int> selector, params IObservable<T>[] sources)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(selector != null);
             Contract.Requires<ArgumentNullException>(sources != null);
             Contract.Ensures(Contract.Result<IObservable<SelectorResult<T>>>() != null);
+#else
+            if (selector == null) throw new ArgumentNullException("selector");
+            if (sources == null) throw new ArgumentNullException("sources");
+#endif
 
             var parameter = sources.AsEnumerable();
+#if USE_CODECONTRACTS
             Contract.Assume(parameter != null);
+#endif
             return selector.Selector(parameter);
         }
 
         public static IObservable<IValueOrError<T>> TakeError<T>(this IObservable<T> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IObservable<IValueOrError<T>>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             return source
                 .TakeError<T, Exception>()
@@ -2409,28 +2768,42 @@ namespace Kirinji.LightWands
 
         public static IObservable<IValueOrError<TValue, TException>> TakeError<TValue, TException>(this IObservable<TValue> source) where TException : Exception
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IObservable<IValueOrError<TValue, TException>>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var value = source
                     .Select(ValueOrError.CreateValue<TValue, TException>)
                     .Catch((TException ex) => Observable.Return(ValueOrError.CreateError<TValue, TException>(ex))); // そしてここでエラーを変換
+#if USE_CODECONTRACTS
             Contract.Assert(value != null);
+#endif
             return value;
         }
 
         public static IObservable<T> ExtractError<T>(this IObservable<IValueOrError<T>> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             return source.Cast<IValueOrError<T, Exception>>().ExtractError();
         }
 
         public static IObservable<TValue> ExtractError<TValue, TException>(this IObservable<IValueOrError<TValue, TException>> source) where TException : Exception
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IObservable<TValue>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var value = Observable.Create<TValue>(observer =>
             {
@@ -2451,14 +2824,21 @@ namespace Kirinji.LightWands
                     observer.OnCompleted);
                 return s;
             });
+#if USE_CODECONTRACTS
             Contract.Assert(value != null);
+#endif
             return value;
         }
 
         public static IObservable<T> DoWhenDebug<T>(this IObservable<T> source, Action<T> action)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(action != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (action == null) throw new ArgumentNullException("action");
+#endif
 
 #if DEBUG
             return source.Do(action);
@@ -2469,8 +2849,12 @@ namespace Kirinji.LightWands
 
         public static IObservable<T> UseObserver<T>(this IObservable<T> source, Action<IObserver<T>, T, int> onNextSelector, Action<Exception, IObserver<T>> onErrorSelector, Action<IObserver<T>> onCompletedSelector)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var actualOnNextSelector = onNextSelector ?? ((observer, x, i) => observer.OnNext(x));
             var actualOnErrorSelector = onErrorSelector ?? ((error, observer) => observer.OnError(error));
@@ -2491,8 +2875,12 @@ namespace Kirinji.LightWands
 
         public static IObservable<T> UseObserver<T>(this IObservable<T> source, Action<IObserver<T>, T, int> onNextSelector)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             return source
                 .UseObserver(onNextSelector, null, null);
@@ -2500,9 +2888,14 @@ namespace Kirinji.LightWands
 
         public static IObservable<T> UseObserver<T>(this IObservable<T> source, Action<IObserver<T>, T> onNextSelector)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(onNextSelector != null);
             Contract.Ensures(Contract.Result<IObservable<T>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (onNextSelector == null) throw new ArgumentNullException("onNextSelector");
+#endif
 
             return source
                 .UseObserver((observer, x, i) => onNextSelector(observer, x), null, null);
@@ -2519,12 +2912,16 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    class SelectorResult<T>
+ class SelectorResult<T>
     {
         public static SelectorResult<T> OnNext(T value, IObservable<T> source, int sourceIndex)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<SelectorResult<T>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var r = new SelectorResult<T>
             {
@@ -2538,8 +2935,12 @@ namespace Kirinji.LightWands
 
         public static SelectorResult<T> OnError(Exception exception, IObservable<T> source, int sourceIndex)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<SelectorResult<T>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var r = new SelectorResult<T>
             {
@@ -2553,8 +2954,12 @@ namespace Kirinji.LightWands
 
         public static SelectorResult<T> OnCompleted(IObservable<T> source, int sourceIndex)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<SelectorResult<T>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             var r = new SelectorResult<T>();
             r.Kind = NotificationKind.OnCompleted;
@@ -2575,19 +2980,22 @@ namespace Kirinji.LightWands
 
     #region ValueOrError
 
+#if USE_CODECONTRACTS
     [ContractClass(typeof(ValueOrErrorContract<,>))]
+#endif
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-    interface IValueOrError<out TValue, out TException> where TException : Exception
+ interface IValueOrError<out TValue, out TException> where TException : Exception
     {
         bool IsError { get; }
         TValue Value { get; }
         TException Error { get; }
     }
 
+#if USE_CODECONTRACTS
     [ContractClassFor(typeof(IValueOrError<,>))]
     abstract class ValueOrErrorContract<TValue, TException> : IValueOrError<TValue, TException> where TException : Exception
     {
@@ -2606,18 +3014,19 @@ namespace Kirinji.LightWands
             get
             {
                 Contract.Ensures(!IsError || Contract.Result<TException>() != null);
-                
+
                 throw new NotImplementedException();
             }
         }
     }
+#endif
 
 #if USE_INTERNAL
     internal
 #else
     public
 #endif
-    interface IValueOrError<out T> : IValueOrError<T, Exception>
+ interface IValueOrError<out T> : IValueOrError<T, Exception>
     {
 
     }
@@ -2627,34 +3036,46 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static class ValueOrError
+ static class ValueOrError
     {
         public static IValueOrError<T> CreateValue<T>(T value)
         {
+#if USE_CODECONTRACTS
             Contract.Ensures(Contract.Result<IValueOrError<T>>() != null);
+#endif
 
             return new ValueOrError<T>(value);
         }
 
         public static IValueOrError<T, TException> CreateValue<T, TException>(T value) where TException : Exception
         {
+#if USE_CODECONTRACTS
             Contract.Ensures(Contract.Result<IValueOrError<T, TException>>() != null);
+#endif
 
             return new ValueOrError<T, TException>(value);
         }
 
         public static IValueOrError<T> CreateError<T>(Exception error)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(error != null);
             Contract.Ensures(Contract.Result<IValueOrError<T>>() != null);
+#else
+            if (error == null) throw new ArgumentNullException("error");
+#endif
 
             return new ValueOrError<T>(error);
         }
 
         public static IValueOrError<T, TException> CreateError<T, TException>(TException error) where TException : Exception
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(error != null);
             Contract.Ensures(Contract.Result<IValueOrError<T, TException>>() != null);
+#else
+            if (error == null) throw new ArgumentNullException("error");
+#endif
 
             return new ValueOrError<T, TException>(error);
         }
@@ -2669,7 +3090,11 @@ namespace Kirinji.LightWands
 
         public ValueOrError(TException error)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(error != null);
+#else
+            if (error == null) throw new ArgumentNullException("error");
+#endif
 
             IsError = true;
             Error = error;
@@ -2681,7 +3106,9 @@ namespace Kirinji.LightWands
 
         public Choice<TValue, TException> ToChoice()
         {
+#if USE_CODECONTRACTS
             Contract.Ensures(Contract.Result<Choice<TValue, TException>>() != null);
+#endif
 
             if (IsError)
             {
@@ -2726,13 +3153,17 @@ namespace Kirinji.LightWands
         public ValueOrError(T value)
             : base(value)
         {
-            
+
         }
 
         public ValueOrError(Exception error)
             : base(error)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(error != null);
+#else
+            if (error == null) throw new ArgumentNullException("error");
+#endif
         }
 
         public bool Equals(ValueOrError<T> other)
@@ -2751,19 +3182,21 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    class CashedReplaySubject<T> : ISubject<T>, IDisposable
+ class CashedReplaySubject<T> : ISubject<T>, IDisposable
     {
         IList<Tuple<ItemType, T, Exception>> cache;
         readonly IScheduler scheduler;
         readonly Subject<T> source = new Subject<T>();
         bool isCompleted;
 
+#if USE_CODECONTRACTS
         [ContractInvariantMethod]
         private void ObjectInvariant()
         {
             Contract.Invariant(cache != null);
             Contract.Invariant(source != null);
         }
+#endif
 
         public CashedReplaySubject(IScheduler scheduler = null)
         {
@@ -2907,7 +3340,7 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-        class ObservableDictionary<TKey, TValue> : IDictionary<TKey, TValue>, INotifyCollectionChanged
+ class ObservableDictionary<TKey, TValue> : IDictionary<TKey, TValue>, INotifyCollectionChanged
     {
         private readonly ObservableCollection<TKey> keys = new ObservableCollection<TKey>();
         private readonly ObservableCollection<TValue> values = new ObservableCollection<TValue>();
@@ -2923,6 +3356,7 @@ namespace Kirinji.LightWands
             readOnlyKeyValuePairs = keyValuePairs.ToReadOnly();
         }
 
+#if USE_CODECONTRACTS
         [ContractInvariantMethod]
         [SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
         private void ObjectInvariant()
@@ -2939,6 +3373,7 @@ namespace Kirinji.LightWands
             Contract.Invariant(readOnlyKeys.Count == readOnlyValues.Count && readOnlyValues.Count == readOnlyKeyValuePairs.Count);
             Contract.Invariant(keyValuePairs.Count == readOnlyKeyValuePairs.Count);
         }
+#endif
 
         public void Add(TKey key, TValue value)
         {
@@ -2957,7 +3392,9 @@ namespace Kirinji.LightWands
         {
             get
             {
+#if USE_CODECONTRACTS
                 Contract.Ensures(Contract.Result<ReadOnlyObservableCollection<TKey>>() != null);
+#endif
 
                 return readOnlyKeys;
             }
@@ -2978,7 +3415,9 @@ namespace Kirinji.LightWands
             keys.RemoveAt(index);
             values.RemoveAt(index);
             keyValuePairs.RemoveAt(index);
+#if USE_CODECONTRACTS
             Contract.Assume(keyValuePairs.Count == readOnlyKeyValuePairs.Count);
+#endif
             return true;
         }
 
@@ -2988,11 +3427,15 @@ namespace Kirinji.LightWands
             if (index <= -1)
             {
                 value = default(TValue);
+#if USE_CODECONTRACTS
                 Contract.Assume(!ContainsKey(key));
+#endif
                 return false;
             }
             value = values[index];
+#if USE_CODECONTRACTS
             Contract.Assume(ContainsKey(key));
+#endif
             return true;
         }
 
@@ -3000,7 +3443,9 @@ namespace Kirinji.LightWands
         {
             get
             {
+#if USE_CODECONTRACTS
                 Contract.Ensures(Contract.Result<ReadOnlyObservableCollection<TValue>>() != null);
+#endif
 
                 return readOnlyValues;
             }
@@ -3039,7 +3484,9 @@ namespace Kirinji.LightWands
         {
             get
             {
+#if USE_CODECONTRACTS
                 Contract.Ensures(Contract.Result<ReadOnlyObservableCollection<KeyValuePair<TKey, TValue>>>() != null);
+#endif
 
                 return readOnlyKeyValuePairs;
             }
@@ -3090,7 +3537,9 @@ namespace Kirinji.LightWands
             keys.RemoveAt(index);
             values.RemoveAt(index);
             keyValuePairs.RemoveAt(index);
+#if USE_CODECONTRACTS
             Contract.Assume(keyValuePairs.Count == readOnlyKeyValuePairs.Count);
+#endif
             return true;
         }
 
@@ -3127,12 +3576,16 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static partial class DictionaryExtensions
+ static partial class DictionaryExtensions
     {
         public static IReadOnlyDictionary<TKey, TValue> ToReadOnly<TKey, TValue>(this IDictionary<TKey, TValue> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IReadOnlyDictionary<TKey, TValue>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             return new ReadOnlyDictionary<TKey, TValue>(source);
         }
@@ -3148,12 +3601,16 @@ namespace Kirinji.LightWands
 #else
     public
 #endif
-    static partial class ListExtensions
+ static partial class ListExtensions
     {
         public static IReadOnlyList<T> ToReadOnly<T>(this IList<T> source)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Ensures(Contract.Result<IReadOnlyCollection<T>>() != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
 
             return new ReadOnlyCollection<T>(source);
         }
@@ -3174,7 +3631,9 @@ namespace Kirinji.LightWands
         /// <summary>Obtains an empty Task object.</summary>
         public static Task Empty()
         {
+#if USE_CODECONTRACTS
             Contract.Ensures(Contract.Result<Task>() != null);
+#endif
 
             return Task.FromResult(0);
         }
@@ -3196,7 +3655,7 @@ namespace Kirinji.LightWands.Tests
 #else
     public
 #endif
-    static class EnumerableExtensions
+ static class EnumerableExtensions
     {
         public static void IsSequenceEqual<T>(this IEnumerable<T> source, params T[] second)
         {
@@ -3251,7 +3710,7 @@ namespace Kirinji.LightWands.Tests
 #else
     public
 #endif
-    static class ObservableExtensions
+ static class ObservableExtensions
     {
         /// <summary>Starts subscribing and cache pushed values.</summary>
         public static History<T> SubscribeHistory<T>(this IObservable<T> source)
@@ -3266,7 +3725,7 @@ namespace Kirinji.LightWands.Tests
 #else
     public
 #endif
-        class History<T> : IEnumerable<Notification<T>>
+ class History<T> : IEnumerable<Notification<T>>
     {
         private readonly IList<Notification<T>> notifications = new List<Notification<T>>();
 
@@ -3354,62 +3813,92 @@ namespace Kirinji.LightWands.Tests
 #else
     public
 #endif
-        static class PrivateObjectExtensions
+ static class PrivateObjectExtensions
     {
         public static object Invoke<T>(this PrivateObject source, string name, T param)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(name != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (name == null) throw new ArgumentNullException("name");
+#endif
 
-            return source.Invoke(name, new[] {typeof (T)}, new object[] {param});
+            return source.Invoke(name, new[] { typeof(T) }, new object[] { param });
         }
 
         public static object Invoke<T1, T2>(this PrivateObject source, string name, T1 param1, T2 param2)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(name != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (name == null) throw new ArgumentNullException("name");
+#endif
 
-            return source.Invoke(name, new[] {typeof (T1), typeof (T2)}, new object[] {param1, param2});
+            return source.Invoke(name, new[] { typeof(T1), typeof(T2) }, new object[] { param1, param2 });
         }
 
         public static object Invoke<T1, T2, T3>(this PrivateObject source, string name, T1 param1, T2 param2, T3 param3)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(name != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (name == null) throw new ArgumentNullException("name");
+#endif
 
-            return source.Invoke(name, new[] {typeof (T1), typeof (T2), typeof (T3)},
-                new object[] {param1, param2, param3});
+            return source.Invoke(name, new[] { typeof(T1), typeof(T2), typeof(T3) },
+                new object[] { param1, param2, param3 });
         }
 
         public static object Invoke<T1, T2, T3, T4>(this PrivateObject source, string name, T1 param1, T2 param2,
             T3 param3, T4 param4)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(name != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (name == null) throw new ArgumentNullException("name");
+#endif
 
-            return source.Invoke(name, new[] {typeof (T1), typeof (T2), typeof (T3), typeof (T4)},
-                new object[] {param1, param2, param3, param4});
+            return source.Invoke(name, new[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4) },
+                new object[] { param1, param2, param3, param4 });
         }
 
         public static object Invoke<T1, T2, T3, T4, T5>(this PrivateObject source, string name, T1 param1, T2 param2,
             T3 param3, T4 param4, T5 param5)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(name != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (name == null) throw new ArgumentNullException("name");
+#endif
 
-            return source.Invoke(name, new[] {typeof (T1), typeof (T2), typeof (T3), typeof (T4), typeof (T5)},
-                new object[] {param1, param2, param3, param4, param5});
+            return source.Invoke(name, new[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5) },
+                new object[] { param1, param2, param3, param4, param5 });
         }
 
         public static object Invoke<T1, T2, T3, T4, T5, T6>(this PrivateObject source, string name, T1 param1, T2 param2,
             T3 param3, T4 param4, T5 param5, T6 param6)
         {
+#if USE_CODECONTRACTS
             Contract.Requires<ArgumentNullException>(source != null);
             Contract.Requires<ArgumentNullException>(name != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+            if (name == null) throw new ArgumentNullException("name");
+#endif
 
             return source.Invoke(name,
-                new[] {typeof (T1), typeof (T2), typeof (T3), typeof (T4), typeof (T5), typeof (T6)},
-                new object[] {param1, param2, param3, param4, param5, param6});
+                new[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6) },
+                new object[] { param1, param2, param3, param4, param5, param6 });
         }
     }
 
