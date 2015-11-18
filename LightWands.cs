@@ -17,7 +17,7 @@
 //-----------------------------------------------------------------------
 
 
-// VERSION: 0.8.3
+// VERSION: 0.8.4
 
 
 /***** public or internal *****/
@@ -210,6 +210,22 @@ namespace Kirinji.LightWands
                 return value;
             }
             return default(TValue);
+        }
+
+        public static TValue? ValueOrNull<TKey, TValue>(this IDictionary<TKey, TValue> source, TKey key) where TValue : struct
+        {
+#if USE_CODECONTRACTS
+            Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
+
+            TValue value;
+            if (source.TryGetValue(key, out value))
+            {
+                return value;
+            }
+            return null;
         }
     }
 
@@ -862,7 +878,6 @@ namespace Kirinji.LightWands
 #else
             if (source == null) throw new ArgumentNullException("source");
 #endif
-
             if (count <= -1) throw new ArgumentOutOfRangeException();
 
             return Enumerable.Range(0, count).Select(i => source.PopFirst()).ToList();
@@ -888,7 +903,7 @@ namespace Kirinji.LightWands
             Contract.Requires<ArgumentOutOfRangeException>(count >= 0);
 #else
             if (source == null) throw new ArgumentNullException("source");
-            if (count >= 0) throw new ArgumentOutOfRangeException("count >= 0");
+            if (count < 0) throw new ArgumentOutOfRangeException("count < 0");
 #endif
 
             var returnList = new List<T>();
@@ -2340,6 +2355,22 @@ namespace Kirinji.LightWands
                 return value;
             }
             return default(TValue);
+        }
+
+        public static TValue? ValueOrNullByReadOnly<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> source, TKey key) where TValue : struct
+        {
+#if USE_CODECONTRACTS
+            Contract.Requires<ArgumentNullException>(source != null);
+#else
+            if (source == null) throw new ArgumentNullException("source");
+#endif
+
+            TValue value;
+            if (source.TryGetValue(key, out value))
+            {
+                return value;
+            }
+            return null;
         }
     }
 
